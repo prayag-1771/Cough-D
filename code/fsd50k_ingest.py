@@ -68,15 +68,33 @@ def fetch(url, dest):
     os.replace(tmp, dest)
 
 
-def join_parts(raw, joined):
+def join_parts(raw, joined, drop_parts=True):
+    """Concatenate the split archive, then release the parts.
+
+    Python's zipfile cannot read a split archive, so the parts must be joined
+    into one file, which doubles the space the corpus occupies while both
+    exist. On this machine that is most of the free space, so the parts are
+    deleted once the joined file is complete: it is self-sufficient, and the
+    parts can be fetched again if needed.
+    """
     if os.path.exists(joined):
         print('  joined archive present')
         return
     print('  joining %d parts' % len(PARTS), flush=True)
-    with open(joined, 'wb') as out:
+    tmp = joined + '.part'
+    with open(tmp, 'wb') as out:
         for p in PARTS:
             with open(os.path.join(raw, p), 'rb') as fh:
                 shutil.copyfileobj(fh, out, 1 << 20)
+    os.replace(tmp, joined)
+    print('  joined: %.2f GB' % (os.path.getsize(joined) / 2 ** 30))
+    if drop_parts:
+        for p in PARTS:
+            try:
+                os.remove(os.path.join(raw, p))
+            except OSError:
+                pass
+        print('  released the split parts')
 
 
 def choose(gt_path, n_neg, seed):
@@ -117,6 +135,14 @@ def image_one(wav_path, name, label, out_root):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--download', action='store_true')
+    # The fetch is network bound and the imaging is processor bound, so they
+    # are separable: the archive can be pulled while the machine is busy with
+    # something else, and the imaging run once it is not.
+    ap.add_argument('--download-only', action='store_true')
+    ap.add_argument('--keep-parts', action='store_true',
+                    help='keep the split parts after joining; they are '
+                         'deleted by default because both copies together are '
+                         'most of the free space on this machine')
     ap.add_argument('--raw', default=os.path.join('..', 'data', 'fsd50k_raw'))
     ap.add_argument('--gt', default=os.path.join('..', 'data', 'fsd50k_meta', GT))
     ap.add_argument('--out', default=os.path.join('..', 'data', 'fsd50k_img'))
@@ -130,8 +156,16 @@ def main():
         for p in PARTS:
             fetch('%s/%s?download=1' % (BASE, p), os.path.join(a.raw, p))
 
+    if a.download_only:
+        have = [p for p in PARTS if os.path.exists(os.path.join(a.raw, p))]
+        if len(have) != len(PARTS):
+            sys.exit('download incomplete: have %d of %d parts'
+                     % (len(have), len(PARTS)))
+        print('  download only: stopping before the join and imaging stages')
+        return
+
     joined = os.path.join(a.raw, 'eval_joined.zip')
-    join_parts(a.raw, joined)
+    join_parts(a.raw, joined, drop_parts=not a.keep_parts)
 
     if not os.path.exists(a.gt):
         sys.exit('ground truth not found at %s' % a.gt)

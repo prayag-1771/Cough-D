@@ -25,6 +25,22 @@ is the partition a reader can reproduce. This set is never trained on.
 
 21,024 clips from 3,365 subjects, released at 16 kHz, which is the rate this
 pipeline already works at, so no resampling is involved.
+
+The official mirror no longer serves the archive to a scripted client. All
+three forms of the published link return an HTML page of about 200 kB rather
+than the zip, and the direct-content host answers 404:
+
+    www.dropbox.com/...?dl=1    200, text/html
+    www.dropbox.com/...?raw=1   200, text/html
+    dl.dropboxusercontent.com   404
+
+Range requests are refused as well, so there is no way to test for the real
+file before fetching it. The external validation arm is therefore built from
+FSD50K instead, which is hosted on Zenodo, carries human annotations rather
+than prompts, and supplies the same confusable negatives of breathing,
+sneezes, gasps, sighs and laughter. This module is kept because it is correct
+and the corpus is worth having if a usable mirror appears; nothing in the
+study depends on it.
 """
 import argparse
 import json
