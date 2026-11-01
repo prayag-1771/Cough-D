@@ -176,6 +176,44 @@ def _one(args):
             pass
 
 
+def reconcile(out_root):
+    """Restrict every condition to the recordings all of them have.
+
+    A recording is imaged into the four conditions in one loop, so a failure
+    part way through leaves it present in some conditions and absent from
+    others. Two recordings did exactly that. The paired test of
+    Section~4.4 compares decisions on the same recordings, so a condition
+    holding an image the others lack would make the comparison silently
+    uneven. The intersection is taken, the odd images are deleted, and the
+    count removed is reported rather than passed over.
+    """
+    sets = {}
+    for _axis, _rule, cond in CONDITIONS:
+        s = set()
+        for lab in ('cough', 'non_cough'):
+            d = os.path.join(out_root, cond, lab)
+            if os.path.isdir(d):
+                s |= {(lab, f) for f in os.listdir(d) if f.endswith('.png')}
+        sets[cond] = s
+
+    common = set.intersection(*sets.values()) if sets else set()
+    dropped = 0
+    for cond, s in sets.items():
+        for lab, fn in sorted(s - common):
+            try:
+                os.remove(os.path.join(out_root, cond, lab, fn))
+                dropped += 1
+            except OSError:
+                pass
+    if dropped:
+        print('  reconciled the conditions: removed %d image(s) of %d '
+              'recording(s) that failed part way through'
+              % (dropped, len({f for _l, f in
+                               set().union(*sets.values()) - common})))
+    print('  every condition now holds the same %d recordings' % len(common))
+    return sorted((f, lab) for lab, f in common)
+
+
 def write_manifest(path, imaged, seed):
     """A recording-level split. This corpus cannot support a speaker split.
 
@@ -275,6 +313,7 @@ def main():
         print('  imaged %d, %d unusable' % (ok, bad))
 
     shutil.rmtree(os.path.join(a.out, '_tmp'), ignore_errors=True)
+    imaged = reconcile(a.out)
     write_manifest(os.path.join(a.out, 'splits.csv'), imaged, a.seed)
 
     print()

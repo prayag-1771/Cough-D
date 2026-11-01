@@ -1,0 +1,36 @@
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage[title]{appendix}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{manyfoot}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{listings}
+
+\graphicspath{{figs/}{./figs/}{./}}
+\setkeys{Gin}{draft=false}
+
+\raggedbottom
+
+\AtBeginDocument{%
+  \addtolength{\oddsidemargin}{\evensidemargin}%
+  \setlength{\oddsidemargin}{0.5\oddsidemargin}%
+  \setlength{\evensidemargin}{\oddsidemargin}%
+}
+
+\hypersetup{bookmarksdepth=3}
+
+\AtBeginDocument{%
+  \let\snOrigThebibliography\thebibliography
+  \renewcommand{\thebibliography}[1]{%
+    \snOrigThebibliography{#1}\sloppy\hbadness=10000\relax}%
+}
+
+\begin{document}
