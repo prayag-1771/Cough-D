@@ -1,0 +1,468 @@
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage[title]{appendix}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{manyfoot}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{listings}
+
+\graphicspath{{figs/}{./figs/}{./}}
+\setkeys{Gin}{draft=false}
+
+\raggedbottom
+
+% The class loads article with twoside, so odd and even pages carry mirrored
+% margins and the text block visibly steps left and right on screen. Passing
+% oneside to \documentclass does not help, because the class applies its own
+% twoside afterwards and the later declaration wins. Average the two instead.
+\AtBeginDocument{%
+  \addtolength{\oddsidemargin}{\evensidemargin}%
+  \setlength{\oddsidemargin}{0.5\oddsidemargin}%
+  \setlength{\evensidemargin}{\oddsidemargin}%
+}
+
+% \bmhead is a level five heading while the class sets bookmarksdepth=5, so
+% the back matter jumps from level one straight to level five and hyperref
+% reports a bookmark level warning once per heading.
+\hypersetup{bookmarksdepth=3}
+
+% Reference entries contain unbreakable strings, so TeX sets the surrounding
+% lines loose. \sloppy alone permits the loose line but leaves \hbadness at
+% 1000, so both are required, applied at \begin{document} to land after
+% natbib's own hooks.
+\AtBeginDocument{%
+  \let\snOrigThebibliography\thebibliography
+  \renewcommand{\thebibliography}[1]{%
+    \snOrigThebibliography{#1}\sloppy\hbadness=10000\relax}%
+}
+
+\begin{document}
+
+\title[Wavelet Denoising and Transferred Architectures for Cough Detection]{Wavelet
+Denoising Before Spectrogram Extraction Improves Cough Detection for Moderate
+Capacity Networks but Not for Densely Connected Ones}
+
+\author[1]{\fnm{Akhilesh Bharadhwaj} \sur{S}}\email{akhilesh.bharadhwaj2024@vitstudent.ac.in}
+
+\author[1]{\fnm{Vishnuvarthan} \sur{M}}\email{vishnuvarthan.m2024@vitstudent.ac.in}
+
+\author[1]{\fnm{Nithin} \sur{Kumar}}\email{nithinkumar.j2024a@vitstudent.ac.in}
+
+\author[1]{\fnm{Ajay} \sur{Pokkali}}\email{ajay.pokkali2024@vitstudent.ac.in}
+
+\author*[1]{\fnm{Ravi} \sur{Tiwari}}\email{ravi.tiwari@vit.ac.in}
+
+\affil*[1]{\orgdiv{School of Electronics Engineering (SENSE)},
+  \orgname{Vellore Institute of Technology},
+  \orgaddress{\city{Chennai}, \state{Tamil Nadu}, \country{India}}}
+
+\abstract{Automatic detection of coughs in continuously recorded audio is the
+gating step for any acoustic respiratory screening system, and its reliability
+determines how often such a system raises an alarm on material that contains no
+cough at all. We study that step on crowdsourced recordings, where background
+noise varies without constraint, and we examine three design choices
+together: whether the network receives a linear or a perceptually scaled
+spectrogram, whether the waveform is denoised with a wavelet transform before
+the spectrogram is formed, and which convolutional architecture performs the
+classification. Four models are evaluated, a compact network trained from
+scratch and three architectures transferred from a large image corpus, each
+with and without denoising, giving eight configurations measured on an
+identical partition of 4,577 held out recordings. Perceptual frequency scaling
+improves every architecture it is applied to. Denoising helps the two models
+of moderate capacity, raising the best accuracy to 96.53 percent with a
+precision of 97.59 percent and a recall of 97.31 percent, but it does not help
+the densely connected network, whose accuracy is unchanged within rounding. We
+also recover the full error structure of every configuration from the reported
+rates and show that the class imbalance of the corpus conceals a wide spread
+in specificity, from 90.84 to 95.73 percent, that plain accuracy does not
+reveal. Ranking the configurations by balanced accuracy preserves the
+conclusion while narrowing the apparent margins considerably, and we report
+the reordering this causes because it changes which model a deployment should
+prefer.}
+
+\keywords{Respiratory screening, Acoustic event detection, Crowdsourced audio,
+Perceptual frequency scaling, Class imbalance, Signal preprocessing}
+
+\maketitle
+
+\section{Introduction}\label{sec:intro}
+
+A cough is one of the few symptoms that produces a signal a microphone can
+capture without contact, without a clinician present and without the person
+being examined doing anything beyond carrying a telephone. That property has
+made acoustic analysis of coughing an attractive route to population scale
+respiratory screening, and the interest intensified during the COVID-19
+pandemic, when the need to triage large numbers of people quickly exceeded the
+capacity of testing programmes in most countries. Systems built in that period
+sought to infer disease status directly from a recorded cough, and several
+reported encouraging results on data gathered through web forms and mobile
+applications~\cite{brown2020, imran2020, laguarta2020}. The conditions of the
+pandemic also produced the open corpora that made comparison across research
+groups possible, of which the COUGHVID collection is among the
+largest~\cite{orlandic2021}.
+
+Beneath the question of what a cough reveals lies a prior question that is
+easier to state and harder to dismiss: is the sound a cough at all. Every
+screening pipeline that operates on continuous audio must first decide which
+segments contain coughing and which contain speech, laughter, door closures,
+traffic, music or silence. That decision is the gate through which all later
+inference passes. A missed cough removes a person from consideration entirely,
+and a false detection sends noncough audio into a disease classifier that was
+never trained on it, producing an output with no meaning that is nonetheless
+reported with a confidence value. In a screening context the second error is
+the more insidious, because it generates referrals that consume clinical time
+and erode confidence in the system among the people who have to act on its
+output. Detection therefore deserves to be studied as a problem in its own
+right rather than as a preprocessing detail, and that is the subject of this
+paper.
+
+The acoustic properties of a cough make the detection problem tractable in
+principle. A cough is a forced expiratory manoeuvre with a characteristic
+three phase structure: an explosive onset as the glottis opens against raised
+subglottal pressure, an intermediate phase of rapid airflow, and a voiced or
+unvoiced termination. The onset produces a broadband transient with energy
+extending well above the range occupied by conversational speech, and the
+sequence of phases gives a temporal envelope that is distinctive even when the
+spectrum alone is ambiguous. Early systems exploited exactly these properties
+through features designed by hand, including Mel frequency cepstral
+coefficients, spectral centroid, zero crossing rate and short term energy,
+often with a classifier of modest capacity on
+top~\cite{swarnkar2013, hoyosbarcelo2018, mongealvarez2019}. Such features are
+interpretable and inexpensive, and they remain appropriate where computation is
+severely constrained, but they encode a fixed prior about what distinguishes a
+cough and they generalise poorly when recording conditions depart from those
+the designer anticipated.
+
+Learned representations displaced designed ones for the same reasons they did
+elsewhere in audio processing. Presenting a time frequency image to a
+convolutional network allows the network to discover which regions of the
+plane carry discriminative information, and work on general audio event
+recognition established both that this approach is effective and that
+architectures developed for natural images transfer to it with little
+modification~\cite{piczak2015, hershey2017, salamon2017}. The transfer is
+possible because a spectrogram, once rendered as an image, exhibits the local
+structure that convolutional kernels are suited to, and because large image
+corpora supply initial filters that are generic enough to be useful on inputs
+quite unlike photographs~\cite{deng2009, pan2010}. The practical consequence is
+that a cough detector can be built from an architecture trained on millions of
+images, retrained on a corpus of a size that a research group can actually
+assemble.
+
+Two choices within that recipe are usually made without being examined.
+The first concerns the frequency axis of the spectrogram. A short time
+Fourier transform spaces its bins linearly, which allocates the same
+resolution to the region between 7 and 8~kHz as to the region between 100 and
+200~Hz, although the latter carries far more of what distinguishes one
+respiratory sound from another. Mapping the axis onto a perceptual scale
+redistributes that resolution, compressing the upper range and expanding the
+lower, following the relationship established in early work on speech
+features~\cite{davis1980}. The second concerns noise. Crowdsourced recordings
+are made on unknown equipment in uncontrolled surroundings, so the corpus
+contains traffic, electrical hum, wind, television audio and clipping, none of
+it labelled. Wavelet decomposition offers a principled way to attenuate such
+interference before any spectrogram is formed, because it represents a signal
+at multiple resolutions simultaneously and allows the components that carry
+broadband transient energy to be separated from those that do
+not~\cite{mallat1989}, with thresholding rules that have a firm statistical
+basis~\cite{donoho1994, donoho1995}.
+
+Whether denoising is worth performing is less obvious than it first appears,
+and the reason is that it interacts with the capacity of the network placed
+after it. A deep network with extensive feature reuse may already learn
+representations that ignore interference, in which case removing that
+interference beforehand buys nothing and risks discarding genuine high
+frequency content that the network had learned to exploit. A network of more
+modest capacity, or one trained for fewer epochs, may lack that ability and
+benefit substantially. This interaction is rarely tested, because most studies
+fix one architecture and vary the preprocessing, or fix the preprocessing and
+vary the architecture, so the question of whether the benefit of denoising
+depends on what follows it remains open. The present work tests precisely that
+interaction by crossing both factors on one corpus with one partition.
+
+This paper makes the following contributions.
+
+\begin{enumerate}
+\item We evaluate eight configurations on an identical partition of the
+COUGHVID corpus, crossing two spectrogram representations and the presence or
+absence of wavelet denoising across four convolutional architectures, so that
+the effect of each factor can be read without the confound of a differing
+split or a differing training budget.
+\item We show that the benefit of wavelet denoising depends on the
+architecture that follows it. The two models of moderate capacity gain, by
+0.77 and 0.35 accuracy points respectively, whereas the densely connected
+network does not, its accuracy changing by less than one tenth of a point in
+the opposite direction.
+\item We recover the complete confusion structure of all eight configurations
+from the published rates and the composition of the test partition, and report
+specificity and balanced accuracy, neither of which the accuracy figure alone
+exposes on a corpus whose classes stand in a ratio greater than two to one.
+\item We show that ranking by balanced accuracy preserves the identity of the
+best configuration but compresses the margins between the remainder and
+reorders the models in the middle of the table, and we set out what this
+implies for a deployment that must choose between a stronger detector and a
+smaller one.
+\end{enumerate}
+
+The remainder of the paper is organised as follows.
+Section~\ref{sec:related} reviews the relevant literature and identifies the
+gap addressed here. Section~\ref{sec:design} specifies the processing pipeline
+and the four architectures. Section~\ref{sec:setup} describes the corpus, the
+training configuration, the metrics and the information needed to repeat the
+work. Section~\ref{sec:results} presents the results, the recovered error
+structure and the limitations of the study. Section~\ref{sec:conclusion}
+concludes.
+
+\section{Related work and its limitations}\label{sec:related}
+
+This section reviews five strands of work and states what each leaves
+unresolved. Section~\ref{sec:rel-handcrafted} covers detection from features
+designed by hand. Section~\ref{sec:rel-corpora} covers the open corpora that
+made comparative evaluation possible and the screening systems built on them.
+Section~\ref{sec:rel-transfer} covers spectrogram inputs and transferred
+architectures. Section~\ref{sec:rel-eval} covers evaluation practice in this
+literature and why reported figures are difficult to compare across studies.
+Section~\ref{sec:rel-denoise} covers denoising for respiratory audio and
+states the gap this study addresses.
+
+\subsection{Detection from designed features}\label{sec:rel-handcrafted}
+
+The first generation of automatic cough detectors described the signal through
+a small set of quantities chosen for their physical interpretation and passed
+them to a classifier of modest capacity. Swarnkar and colleagues separated wet
+from dry coughs in paediatric patients using features of this kind, showing
+that the distinction clinicians draw by ear has a measurable acoustic
+correlate~\cite{swarnkar2013}. Hoyos-Barcel\'o and colleagues addressed the
+engineering problem directly, implementing a nearest neighbour classifier
+efficiently enough to detect cough events on a smartphone in real
+time~\cite{hoyosbarcelo2018}, and the same group later described a detector
+built on local moments computed over the time frequency
+plane~\cite{mongealvarez2019}. Nemati and colleagues considered the broader
+task of distinguishing cough types rather than merely detecting
+them~\cite{nemati2019}.
+
+The features themselves were chosen to reflect properties of the signal that
+can be described in words. Cepstral coefficients summarise the gross shape of
+the spectral envelope in a small number of values and so capture the resonant
+structure imposed by the airway. Spectral centroid locates the centre of mass
+of the spectrum and separates sounds that are bright from those that are
+dull. Zero crossing rate responds to the proportion of high frequency content
+and distinguishes the noisy portion of a cough from voiced material. Short
+term energy traces the envelope and therefore the phase structure that gives
+a cough its characteristic shape in time. A classifier presented with these
+quantities is working with a compact description that a clinician can be
+shown and, in principle, dispute.
+
+These systems share two strengths that are easy to undervalue. They are cheap
+enough to run continuously on battery powered hardware, and their decisions
+can be traced to quantities a clinician can be shown. Their weakness is that
+the feature set encodes an assumption about what a cough sounds like, fixed
+before any data is seen. Where the recording conditions match that assumption
+the systems perform well; where they do not, performance falls in ways that
+cannot be corrected by retraining the classifier alone, because the
+information the classifier would need has already been discarded by the
+feature extractor. Crowdsourced audio departs from any fixed assumption by
+construction, which is what motivated the move to learned representations.
+
+\subsection{Open corpora and screening systems}\label{sec:rel-corpora}
+
+Progress in this area was limited for a long period by the absence of data
+that different groups could share. The pandemic changed that. Brown and
+colleagues assembled crowdsourced respiratory recordings and showed that
+simple classifiers applied to them could separate reported COVID-19 cases from
+controls at rates well above chance~\cite{brown2020}. Sharma and colleagues
+released the Coswara database, covering breathing, cough and voice
+together~\cite{sharma2020}. Orlandic and colleagues released COUGHVID, the
+corpus used here, and documented both its scale and the variability that makes
+it demanding: the recordings arrive through a web interface from unknown
+devices in unknown surroundings, and a substantial fraction contain no cough at
+all~\cite{orlandic2021}.
+
+Screening systems followed quickly. Imran and colleagues built a deployable
+application around a deep classifier operating on cough
+audio~\cite{imran2020}, Laguarta and colleagues reported that a model trained
+on cough recordings alone could discriminate COVID-19 status~\cite{laguarta2020},
+Pahar and colleagues examined the same question across smartphone recordings
+gathered globally~\cite{pahar2021}, and Coppock and colleagues trained a
+network end to end on breath and cough audio~\cite{coppock2021}. Later work
+pursued architectural refinement for the same task~\cite{dentamaro2022,
+vijayakumar2021, lella2021}, and independent groups revisited the crowdsourced
+data to test how far the early claims
+generalised~\cite{son2022}. Ijaz and colleagues survey the field as a
+whole~\cite{ijaz2022}.
+
+A reckoning followed the first wave of results. Several of the early claims
+rested on corpora in which the positive and negative groups differed in more
+than their disease status, because the people who contributed them were
+recruited through different channels, recorded in different circumstances and
+sometimes on different classes of device. A model can separate such groups
+without learning anything about respiratory disease, and independent
+re examination of crowdsourced material has reported figures below those
+initially announced once such confounds are controlled~\cite{son2022}. The
+episode left the field with a sharper sense of what an acoustic screening
+claim requires: a negative class drawn from the same population and the same
+recording conditions as the positive one, a partition that separates
+contributors rather than recordings, and a baseline that shows what the
+prior alone would achieve.
+
+That history bears directly on the detection problem studied here, because a
+detector is the component that decides which audio a disease model ever sees.
+If detection errors correlate with recording conditions, and crowdsourced
+recording conditions correlate with contributor, then a detector can
+introduce exactly the kind of confound the field has learned to guard
+against, before the disease model is reached at all.
+
+The limitation relevant here is one of emphasis rather than of method. Almost
+all of this work takes the presence of a cough as given and asks what the
+cough indicates. The recordings are segmented, often manually or with a
+detector whose own error rate is not reported, and the screening model is
+evaluated on the segments that survive. Any error introduced at that stage is
+therefore absent from the reported figures while remaining present in any
+deployment, and since the detection stage is where noncough audio is rejected,
+its false positive rate propagates directly into the referral rate of the
+complete system.
+
+\subsection{Spectrogram inputs and transferred architectures}\label{sec:rel-transfer}
+
+Treating a time frequency representation as an image allows a convolutional
+network to learn its own features, and the approach was established on general
+audio before it was applied to respiratory sounds. Piczak showed that a
+convolutional network on spectrogram inputs is competitive for environmental
+sound classification~\cite{piczak2015}, Salamon and Bello improved the result
+with augmentation designed for audio~\cite{salamon2017}, and Hershey and
+colleagues examined how image architectures behave at large scale on
+audio~\cite{hershey2017}, supported by the release of a correspondingly large
+labelled collection~\cite{gemmeke2017}.
+
+The architectures themselves originate in image recognition. Residual
+connections allowed networks to be made substantially deeper without the
+degradation that had previously accompanied depth~\cite{he2016}. Dense
+connectivity, in which every layer receives the feature maps of all preceding
+layers, strengthens gradient flow further and encourages features to be reused
+rather than recomputed~\cite{huang2017}. Separately, work on efficiency
+produced architectures intended for devices with limited memory and power, of
+which the inverted residual design with linear bottlenecks is a widely adopted
+example~\cite{sandler2018}. All three transfer to spectrogram inputs by
+replacing the classification head, with initial weights taken from a large
+image corpus~\cite{deng2009}; the general conditions under which such transfer
+succeeds are surveyed by Pan and Yang~\cite{pan2010}.
+
+Why transfer from photographs to spectrograms works at all deserves a word,
+because the two kinds of image are not alike. A photograph is approximately
+stationary under translation in either direction, so a feature is equally
+meaningful wherever it appears. A spectrogram is not: translating a pattern
+along the time axis leaves its meaning intact, whereas translating it along
+the frequency axis changes what it represents. A convolution applied over both
+axes therefore imposes an invariance on the frequency axis that the signal
+does not possess. Transfer nonetheless succeeds, and the reason appears to be
+that the early layers of an image network learn generic detectors of edges,
+corners and oriented texture, and these remain useful on a spectrogram because
+the structures that matter there, harmonic ridges, broadband vertical
+transients and the boundaries of energy bursts, are themselves edges and
+textures. The layers whose features are specific to natural images lie deeper,
+and those are the layers that retraining adjusts.
+
+What is less often examined is the frequency axis these architectures receive.
+A linear axis and a perceptually scaled one present the same recording as
+visibly different images, and the convolution kernel, which is spatially
+uniform, therefore sees a different problem in each case. The perceptual
+mapping concentrates resolution where respiratory sounds differ most, and the
+relationship used for it was established in the speech recognition
+literature~\cite{davis1980}. The choice also interacts with the resize that
+precedes a transferred network, since an architecture expecting a square
+input of fixed size will compress or stretch whatever representation it is
+given, and the amount of distortion this introduces depends on how many
+frequency bins the representation carried in the first place. Studies
+comparing the two axes on cough detection specifically, with everything else
+held constant, are uncommon.
+
+\subsection{Evaluation practice in this literature}\label{sec:rel-eval}
+
+Reported figures in cough analysis are difficult to compare across studies,
+and the reasons are worth setting out because they shape how the present
+results should be read.
+
+The first reason is that the corpora differ in what they contain. A corpus
+assembled from clinical recordings contains coughs produced by people who are
+unwell, captured on consistent equipment at a controlled distance. A
+crowdsourced corpus contains coughs produced on request by a largely healthy
+population on whatever device they happened to hold, at distances and levels
+that vary by orders of magnitude, with background content that ranges from
+silence to television audio. Detection is a different problem in the two
+settings, and a figure obtained in one does not transfer to the
+other~\cite{orlandic2021, ijaz2022}. The same applies to the negative class.
+What counts as a noncough recording is defined differently by different
+collections, and a detector evaluated against a negative class consisting
+mostly of speech will report a different error rate from one evaluated
+against a negative class dominated by mechanical noise.
+
+The second reason is the partition. Many reported results use a random split
+at the level of the recording, which allows multiple recordings from one
+contributor to appear on both sides of the division. Where contributors
+differ systematically in device, room and vocal character, such a split lets
+a model recognise the contributor rather than the event, and the resulting
+figure overstates what the model would achieve on an unseen person. Splitting
+by contributor avoids this but is possible only where contributor identifiers
+are retained, which not every collection provides.
+
+The third reason is the choice of summary measure. Cough corpora are commonly
+imbalanced, and on an imbalanced partition accuracy is dominated by the
+majority class, so two systems with identical accuracy can differ
+substantially in how they distribute their errors. Precision, recall and
+$F_1$ expose that distribution, which is why all four are reported here,
+and the balance between them is the quantity a deployment actually
+selects on. Comparable studies vary in which subset they report, and a study
+reporting accuracy alone leaves a reader unable to tell whether an
+improvement came from detecting more coughs or from rejecting more noncough
+material~\cite{son2022}.
+
+The consequence for the present work is methodological rather than
+substantive. Because cross study comparison is unreliable for these reasons,
+the design adopted here holds the corpus, the partition, the optimiser and the
+evaluation fixed and varies only the two factors under examination. The
+comparisons that carry the argument are therefore internal to this study, and
+we draw no conclusion from the numerical proximity of our figures to those
+reported elsewhere.
+
+\subsection{Denoising for respiratory audio, and the gap}\label{sec:rel-denoise}
+
+Wavelet analysis is well matched to signals whose informative content is
+transient. Decomposing a waveform across scales isolates abrupt broadband
+events, such as the explosive onset of a cough, from interference that is
+either narrowband or slowly varying, and the multiresolution framework that
+makes this possible is due to Mallat~\cite{mallat1989}. The statistical basis
+for discarding coefficients was established by Donoho and Johnstone, who showed
+that thresholding in a wavelet basis is near optimal for recovering a signal
+from additive noise~\cite{donoho1994} and characterised the behaviour of soft
+thresholding in particular~\cite{donoho1995}. Applied to a cough recording, the
+approach attenuates the background while leaving the transient structure that
+carries the discriminative information largely intact.
+
+Reported results on respiratory audio generally favour denoising, but the
+evidence has a consistent shape that limits what can be drawn from it. A study
+fixes one architecture, applies denoising, observes an improvement and
+concludes that denoising is beneficial. This establishes that denoising helps
+that architecture on that corpus. It does not establish that the benefit is a
+property of denoising rather than of the pairing, and there is a specific
+reason to doubt that it is. Denoising and architectural capacity address the
+same problem by different means. Removing interference before the network sees
+it, and building a network able to ignore interference, are substitutes rather
+than complements, so a network that already achieves invariance through its own
+structure should gain little from preprocessing and may lose whatever genuine
+high frequency content the preprocessing removes along with the noise.
+
+The gap this study addresses follows directly. We hold the corpus, the
+partition, the optimiser and the evaluation fixed, and vary the representation
+and the denoising across four architectures that differ substantially in depth
+and in the mechanism by which they reuse features. This design allows the
+question to be posed as an interaction rather than as a main effect, and
+Section~\ref{sec:results} shows that the interaction is real: the benefit of
+denoising is not a constant of the method but depends on what is placed after
+it.

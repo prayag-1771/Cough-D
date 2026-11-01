@@ -1,0 +1,753 @@
+\section{Results and discussion}\label{sec:results}
+
+This section reports the outcome of the eight configurations and interprets
+them. Section~\ref{sec:res-overall} gives the headline comparison.
+Section~\ref{sec:res-axis} isolates the contribution of the frequency axis,
+and Section~\ref{sec:res-denoise} that of wavelet denoising.
+Section~\ref{sec:res-errors} examines the error structure of the leading
+architecture in detail. Section~\ref{sec:res-deploy} considers what the
+figures imply for a deployed system, and Section~\ref{sec:res-limits} states
+the limits of the study.
+
+\subsection{Overall comparison}\label{sec:res-overall}
+
+Table~\ref{tab:main} reports accuracy, precision, recall and $F_1$ for every
+configuration on the held out partition. The highest accuracy, 96.53 percent,
+is obtained by ResNet18 operating on denoised perceptual spectrograms, with a
+precision of 97.59 percent, a recall of 97.31 percent and an $F_1$ of 97.45
+percent. This represents a cumulative improvement of 3.08 accuracy points over
+the compact network on linear axis spectrograms, which is the configuration
+that uses neither transferred weights, nor perceptual scaling, nor denoising.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Performance of all eight configurations on the 4,577 held out
+recordings. The compact network is trained from random initialisation on the
+linear frequency axis; the three transferred architectures operate on the
+perceptual axis. Accuracy should be read against a majority class baseline of
+68.26 percent rather than against 50 percent, because the test partition
+contains 2.15 cough recordings for every noncough recording.}
+\label{tab:main}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Architecture & Input representation & Accuracy (\%) & Precision & Recall & $F_1$ \\
+\midrule
+Compact network & Linear & 93.45 & 0.9754 & 0.9273 & 0.9508 \\
+Compact network & Wavelet + linear & 93.86 & 0.9665 & 0.9427 & 0.9545 \\
+ResNet18 & Perceptual & 95.76 & 0.9584 & 0.9805 & 0.9693 \\
+ResNet18 & Wavelet + perceptual & \textbf{96.53} & \textbf{0.9759} & 0.9731 & \textbf{0.9745} \\
+MobileNetV2 & Perceptual & 95.76 & 0.9797 & 0.9577 & 0.9686 \\
+MobileNetV2 & Wavelet + perceptual & 96.11 & 0.9700 & 0.9731 & 0.9716 \\
+DenseNet201 & Perceptual & 96.15 & 0.9694 & 0.9744 & 0.9719 \\
+DenseNet201 & Wavelet + perceptual & 96.09 & 0.9652 & 0.9779 & 0.9715 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two features of the table deserve comment before the individual factors are
+separated. The first is that the three transferred architectures lie close
+together, spanning 0.77 accuracy points across their six configurations, while
+the gap between the best transferred configuration and the compact network is
+2.67 points. That gap is the only difference in the table wide enough to
+exceed the uncertainty attaching to a single accuracy measurement, for the
+reasons set out in Section~\ref{sec:res-precision}, and it is correspondingly
+the only one on which a claim could rest. It will not carry the claim that
+transferred initialisation is what produced it. The compact network differs
+from the transferred networks in five respects simultaneously: the
+initialisation, the architecture, the frequency axis, the sample rate at which
+the recording was analysed, and whether the network is presented with the
+spectrogram as a numerical array or with a raster image of that spectrogram as
+plotted to a figure. Any one of the five is capable of moving accuracy by more
+than two points, and the design separates none of them. We therefore report
+the gap and decline to attribute it. The second feature is that every
+configuration exceeds the majority class baseline of 68.26 percent by at least
+25 points, so all eight models have learned structure in the signal rather
+than exploiting the prior.
+
+Figure~\ref{fig:results} presents the same eight configurations graphically,
+paired so that the two bars above each architecture differ only in whether
+denoising was applied. Reading across the four pairs shows that the gap
+between architectures is wider than the gap produced by denoising within any
+one of them, and reading within each pair shows that the sign of the
+denoising effect is not constant across architectures, which is the
+observation Section~\ref{sec:res-denoise} develops.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{results_comparison.png}
+\caption{Accuracy in panel (a) and $F_1$ score in panel (b) for the four
+architectures, with the unfilled bar of each pair giving the result without
+denoising and the hatched bar the result with it. The vertical axes are
+truncated so that differences of a few tenths of a point remain visible;
+every bar shown lies far above the majority class baseline of 68.26 percent.
+Beyond the values already listed in Table~\ref{tab:main}, the paired layout
+makes the inconsistency of the denoising effect apparent at a glance: three
+pairs step upward and the fourth does not.}
+\label{fig:results}
+\end{figure}
+
+\subsection{Effect of the frequency axis}\label{sec:res-axis}
+
+Replacing the linear frequency axis with a perceptual one produced a
+consistent improvement. The compact network on linear axis spectrograms
+reached 93.45 percent, while ResNet18 on perceptual spectrograms reached 95.76
+percent, a gain of 2.31 points, and every configuration using the perceptual
+axis outperformed every configuration using the linear one without exception
+across the eight runs.
+
+The mechanism is a matter of where spectral resolution is spent. A linear axis
+allocates bins uniformly, so half of them describe the band above 4~kHz, in
+which a cough and many competing impulsive sounds are broadly similar. The
+mapping of Equation~\eqref{eq:mel} compresses that band and expands the region
+below roughly 1~kHz, where the voiced termination of a cough and much of the
+envelope structure that separates it from a brief mechanical noise both
+reside. Because a convolutional kernel is spatially uniform, it treats equal
+distances along the frequency axis as equivalent regardless of what those
+distances represent, so warping the axis changes what a kernel of a given size
+is able to express. This is the argument originally advanced for perceptual
+scaling in speech recognition~\cite{davis1980}, and the present results
+indicate that it carries over to respiratory sounds.
+
+The comparison is not a clean isolation of the representation, because the
+compact network differs from the transferred models in initialisation and
+depth as well as in input. The figure therefore bounds the combined effect
+rather than attributing it, and Section~\ref{sec:res-limits} returns to this.
+
+\subsection{Effect of wavelet denoising}\label{sec:res-denoise}
+
+Wavelet preprocessing improved accuracy for three of the four architectures.
+The gain was largest for ResNet18, which rose from 95.76 to 96.53 percent, an
+improvement of 0.77 points. Its precision rose from 0.9584 to 0.9759 and its
+$F_1$ from 0.9693 to 0.9745, indicating that the improvement came principally
+from a reduction in false alarms rather than from detecting additional coughs.
+MobileNetV2 improved from 95.76 to 96.11 percent, a gain of 0.35 points,
+showing that an architecture constrained in capacity also benefits from a
+cleaner input. The compact network improved from 93.45 to 93.86 percent.
+These outcomes are consistent with the established view that attenuating
+interference in a wavelet basis raises the effective signal to noise ratio of
+a recording before any time frequency representation is
+formed~\cite{mallat1989, donoho1995}.
+
+DenseNet201 was the exception. Its accuracy changed from 96.15 to 96.09
+percent, a difference of 0.06 points in the opposite direction and smaller
+than the rounding in the reported figures. Recall improved slightly, from
+0.9744 to 0.9779, while precision fell from 0.9694 to 0.9652, leaving $F_1$
+essentially unchanged at 0.9719 against 0.9715. The most plausible reading is
+that dense connectivity already supplies what denoising would otherwise
+provide. Because every layer in a dense block receives the feature maps of all
+preceding layers, the network has direct access to representations at many
+levels of abstraction simultaneously and can learn to discount interference
+without that interference being removed beforehand~\cite{huang2017}. On this
+account denoising and dense connectivity are substitutes rather than
+complements, and applying both yields little beyond applying either. There is
+a further possibility that the two cannot be separated here: removing
+components in a wavelet basis also removes some genuine high frequency
+transient energy, and a network that had learned to exploit that energy would
+lose a little by its removal.
+
+Table~\ref{tab:delta} collects the change each architecture shows when
+denoising is applied, so that the four comparisons can be read against one
+another rather than recovered from eight separate rows. The accuracy column
+orders the architectures by how much they gain, and the precision and recall
+columns show that the gain is not of the same kind in each case: for ResNet18
+precision rises while recall falls, whereas for the compact network and
+MobileNetV2 the movement is in the opposite direction.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Change in each measure when wavelet denoising is applied, by
+architecture, computed from the paired rows of Table~\ref{tab:main}. Accuracy
+is in percentage points and the remaining columns in absolute units. A
+positive entry indicates that denoising improved the measure.}
+\label{tab:delta}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Architecture & $\Delta$ Accuracy & $\Delta$ Precision & $\Delta$ Recall & $\Delta F_1$ \\
+\midrule
+ResNet18 & $+0.77$ & $+0.0175$ & $-0.0074$ & $+0.0052$ \\
+Compact network & $+0.41$ & $-0.0089$ & $+0.0154$ & $+0.0037$ \\
+MobileNetV2 & $+0.35$ & $-0.0097$ & $+0.0154$ & $+0.0030$ \\
+DenseNet201 & $-0.06$ & $-0.0042$ & $+0.0035$ & $-0.0004$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The practical implication is that wavelet denoising is most worthwhile for
+architectures of moderate depth and capacity, and least worthwhile for very
+deep networks with strong feature reuse. This is a useful result for system
+design, because it indicates that preprocessing and architectural capacity
+should be chosen together rather than independently.
+
+\subsection{Error structure of the leading configuration}\label{sec:res-errors}
+
+The accuracy figures summarise performance but conceal how the two error types
+are distributed, which matters because the two carry different costs in a
+screening context. Table~\ref{tab:resnet} gives the confusion counts for the
+two ResNet18 configurations.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Confusion counts for the two ResNet18 configurations on the 4,577
+held out recordings. Where Table~\ref{tab:main} reports the summary rates,
+this table shows how each rate is composed, which is what reveals that the
+improvement from denoising is concentrated almost entirely in the false
+positive column.}
+\label{tab:resnet}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Configuration & True positives & False negatives & False positives & True negatives \\
+\midrule
+Perceptual axis & 3063 & 61 & 133 & 1320 \\
+Wavelet + perceptual axis & 3040 & 84 & \textbf{75} & \textbf{1378} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:confusion} presents the same two results as class by class
+matrices. Where Table~\ref{tab:resnet} gives the four counts for arithmetic
+use, the matrices show at a glance that the entire difference between the two
+configurations sits in the lower left cell, with the diagonal and the upper
+right cell changing comparatively little.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\textwidth]{cm_baseline.png}\\[6pt]
+{\footnotesize (a) perceptual axis, without denoising}\\[10pt]
+\includegraphics[width=0.72\textwidth]{cm_denoised.png}\\[6pt]
+{\footnotesize (b) perceptual axis, with wavelet denoising}
+\caption{Class by class results for the two ResNet18 configurations, with
+true class on the vertical axis and predicted class on the horizontal. The
+noncough row is the one that changes: 133 noncough recordings are labelled
+as coughs in (a) against 75 in (b), while the cough row moves by 23 in the
+opposite direction. The visual form makes the asymmetry of the change
+apparent in a way the four numbers alone do not, since the off diagonal mass
+is concentrated almost entirely in a single cell in both panels.}
+\label{fig:confusion}
+\end{figure}
+
+Without denoising, the model identified 3,063 of the 3,124 cough recordings,
+giving a recall of 0.9805, so almost every genuine cough was found. The cost
+was 133 noncough recordings classified as coughs, which produced the
+comparatively low precision of 0.9584. With denoising, false positives fell
+from 133 to 75, a reduction of 43.6 percent, and true negatives rose
+correspondingly from 1,320 to 1,378. Recall fell slightly, to 0.9731, as false
+negatives rose from 61 to 84. The net effect was an increase in $F_1$ from
+0.9693 to 0.9745.
+
+This redistribution is favourable for the intended application. A false
+positive at the detection stage admits audio containing no cough into a
+downstream analysis that was never trained on such material, and the output of
+that analysis is then reported with a confidence value it has not earned. In a
+screening deployment this generates referrals that consume clinical time and
+erode trust in the system among those who must act on its output. Trading 23
+additional missed coughs for 58 fewer false alarms is therefore a reasonable
+exchange, particularly where the same person may cough more than once within a
+monitored period and a missed event does not necessarily mean a missed case.
+
+\subsection{Implications for deployment}\label{sec:res-deploy}
+
+Three observations follow for a system intended to run outside a laboratory.
+
+The first concerns the choice of architecture under a computational budget.
+MobileNetV2 with denoising reached 96.11 percent, within 0.42 points of the
+best configuration, while requiring a fraction of the parameters and
+arithmetic of the larger models by virtue of its depthwise separable
+convolutions and inverted residual blocks~\cite{sandler2018}. Where a detector
+must run continuously on a handheld or embedded device, which is the setting
+in which cough monitoring is most useful and where comparable systems have
+been targeted~\cite{hoyosbarcelo2018, karatas2021}, this configuration is the
+more sensible selection.
+
+The second concerns whether to include the denoising stage at all. Its cost is
+linear in recording length and it must be applied to every input, both in
+training and at inference. For ResNet18 and MobileNetV2 the gain justifies
+that cost. For DenseNet201 it does not, and the stage should be omitted,
+which also removes a parameter choice, the wavelet family and decomposition
+level, that would otherwise have to be validated for each new deployment.
+
+The third concerns the operating point. All the figures reported here derive
+from the default decision rule in which the more probable class is selected.
+Because the two error types are not equally costly, a deployed system would
+normally adjust the decision threshold to favour specificity, and the
+consequence of doing so can be anticipated from Table~\ref{tab:resnet}: the
+undenoised configuration has the headroom in recall to absorb such an
+adjustment, whereas the denoised configuration is already operating closer to
+a balanced point.
+
+\subsection{Statistical precision}\label{sec:res-precision}
+
+The differences discussed above are small, and their interpretation depends on
+how precisely a proportion measured on 4,577 recordings is known. We therefore
+attach an interval to every accuracy figure and report measures that do not
+inherit the class imbalance. Each accuracy is a binomial proportion estimated
+on a finite sample, and we summarise its precision with the Wilson score
+interval, which is preferred to the normal approximation because it remains
+inside the unit interval and keeps its nominal coverage when the proportion
+approaches one, as all of these do~\cite{brown2001}. Because accuracy on a
+corpus with 2.15 coughs for every noncough recording is dominated by the
+majority class, we also report specificity, the proportion of noncough
+recordings correctly rejected, together with balanced accuracy, the unweighted
+mean of recall and specificity, and the Matthews correlation coefficient,
+which uses all four cells of the confusion matrix and is the measure least
+distorted by imbalance~\cite{chicco2020}. Table~\ref{tab:interval} collects
+these for the eight configurations.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Interval estimates and class balanced measures for the eight
+configurations. Accuracy is accompanied by its 95 percent Wilson score
+interval on the 4,577 test recordings. Specificity is the proportion of the
+1,453 noncough recordings correctly rejected, balanced accuracy the unweighted
+mean of recall and specificity, and MCC the Matthews correlation coefficient.
+Wav abbreviates wavelet denoising applied before spectrogram extraction, and
+Perc the perceptual frequency axis. The interval around every individual
+accuracy is wider than any difference between a configuration and its pair.}
+\label{tab:interval}
+\begin{tabular}{@{}llrcrrr@{}}
+\toprule
+Architecture & Input & Acc. & 95\% interval & Spec. & Bal. & MCC \\
+\midrule
+Compact & Linear & 93.45 & 92.69--94.13 & 94.98 & 93.85 & 0.855 \\
+Compact & Wav + linear & 93.86 & 93.13--94.52 & 92.98 & 93.63 & 0.861 \\
+ResNet18 & Perc & 95.76 & 95.14--96.31 & 90.85 & 94.45 & 0.901 \\
+ResNet18 & Wav + Perc & \textbf{96.53} & 95.96--97.02 & 94.84 & \textbf{96.07} & \textbf{0.920} \\
+MobileNetV2 & Perc & 95.76 & 95.14--96.31 & \textbf{95.73} & 95.75 & 0.904 \\
+MobileNetV2 & Wav + Perc & 96.11 & 95.51--96.63 & 93.53 & 95.42 & 0.910 \\
+DenseNet201 & Perc & 96.15 & 95.56--96.67 & 93.39 & 95.42 & 0.911 \\
+DenseNet201 & Wav + Perc & 96.09 & 95.49--96.61 & 92.43 & 95.11 & 0.909 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The intervals settle the status of the denoising comparisons. Their mean width
+is 1.20 accuracy points, while the largest difference denoising produces in
+any pair is 0.77 points on ResNet18 and the smallest is 0.06 points on
+DenseNet201. Every difference the study reports between a configuration and
+its denoised counterpart is therefore smaller than the uncertainty on either
+of the two measurements being compared, and the intervals of all four pairs
+overlap substantially. On this evidence the effect of denoising on accuracy is
+not resolved by the experiment in either direction: the data are consistent
+with a small benefit, with no effect, and with a small cost, and the pattern
+of signs across the four architectures carries no more information than the
+magnitudes do. The same arithmetic applies to the 0.77 point spread across the
+three transferred architectures, which is likewise contained within a single
+interval and does not support ranking them.
+
+It should be said precisely what would settle the question, because the
+present design cannot. A paired comparison of two classifiers on identical
+test material is properly tested by McNemar's statistic, which depends only on
+the two discordant counts, the recordings one model classifies correctly and
+the other does not~\cite{dietterich1998}. Those counts are properties of the
+paired per recording decisions and are not recoverable from confusion
+matrices, which report only the margins. The margins do bound the discordance
+from below: between the two ResNet18 configurations at least 81 of the 4,577
+recordings must be classified differently, since 58 false positives are
+removed and 23 false negatives introduced. The sign and size of the effect,
+however, require the decisions themselves, which means retaining per recording
+predictions for every configuration. We note this as a requirement on the
+design rather than as a result.
+
+The class balanced measures also change which configuration appears best, and
+in a way accuracy conceals. Specificity varies across the eight configurations
+from 90.85 to 95.73 percent, a spread of 4.88 points that is four times the
+width of an accuracy interval and the largest systematic variation anywhere in
+the study. ResNet18 on undenoised perceptual spectrograms has the weakest
+specificity in the table at 90.85 percent, yet its accuracy of 95.76 percent
+is identical to that of MobileNetV2 on the same input, which rejects noncough
+material at 95.73 percent. Two configurations indistinguishable on accuracy
+thus differ by almost five points in the rate at which they raise false
+alarms, which is the quantity that governs whether a continuously running
+detector is tolerable to use. Balanced accuracy and the Matthews coefficient
+both rank the denoised ResNet18 configuration first, at 96.07 percent and
+0.920 respectively, and both separate the compact network from the transferred
+ones by a margin larger than they separate the transferred ones from each
+other. These two measures are the ones we would ask a reader to compare, and
+the ranking they produce is the one the discussion above relies on.
+
+\subsection{Limitations}\label{sec:res-limits}
+
+Six limitations bound what the present results establish, and we state them
+with their consequences rather than deferring them.
+
+The training budget is not uniform across the transferred models. DenseNet201
+was optimised for three epochs against ten for ResNet18 and MobileNetV2, as
+recorded in Table~\ref{tab:train}, because its depth makes each epoch
+substantially more expensive. The observation that denoising does not benefit
+DenseNet201 is therefore consistent with two explanations, dense connectivity
+substituting for preprocessing or simply a shorter optimisation, and the
+present experiments cannot separate them. Training to a matched budget is the
+direct way to settle this, and until that is done the architectural reading
+should be treated as the more plausible of two accounts rather than as an
+established result. The interaction between normalisation statistics and a
+short schedule gives further reason for caution, since those statistics are
+themselves still settling in the early epochs of
+training~\cite{awais2021}.
+
+Each configuration was trained once, and the random seed was not fixed, so
+neither an estimate of variation across initialisations nor an exact
+reproduction of any individual run is available. This is the most serious of
+the six, because Section~\ref{sec:res-precision} shows that every difference
+the study reports between a configuration and its denoised counterpart is
+smaller than the sampling uncertainty on a single accuracy measurement, before
+any variation between runs is added. The consequence is that the denoising
+comparisons are unresolved rather than negative, and that the ordering of the
+three transferred architectures is not established. Only two findings survive
+this limitation: the 2.67 point separation between the compact network and the
+transferred networks, which exceeds the interval width but is confounded five
+ways and is therefore reported without attribution, and the 4.88 point spread
+in specificity, which exceeds it by a wider margin. Repeating every
+configuration across several seeds and reporting the distribution rather than
+a single value is the minimum that would change this, and retaining per
+recording predictions so that paired tests become available is what would
+settle the denoising question.
+
+The comparison between frequency axes is confounded with initialisation and
+depth, as noted in Section~\ref{sec:res-axis}, because the linear axis was
+paired only with the compact network. The consistency of the direction across
+all eight runs supports the conclusion that the representation contributes,
+but the portion of the 2.31 point gap attributable to the axis alone is not
+identified by this design. Pairing a transferred architecture with linear axis
+input would resolve it.
+
+No separate validation partition was constructed. The material on which the
+reported accuracies are measured is the same material that was supplied to the
+training routine for monitoring, as recorded in Table~\ref{tab:train}. The
+network retained in each case is the one at the final iteration rather than
+the one at the best monitored score, so no quantity computed on the test
+partition entered the selection of weights, and the figures are not inflated
+by that mechanism. What the arrangement does remove is the separation between
+the data used to observe training and the data used to report performance,
+which means the numbers should be read as measurements on a partition that was
+visible throughout rather than as estimates of performance on unseen
+recordings. A three way division of the corpus, with the epoch budget and the
+learning rate chosen on a validation partition and the test partition touched
+once, is the correction, and it is a precondition for the other improvements
+listed here rather than an alternative to them.
+
+The inputs given to the compact network and to the transferred networks differ
+in more than the frequency axis. The perceptual spectrograms are computed as
+arrays, compressed logarithmically and written as single channel images,
+whereas the linear axis spectrograms are produced by plotting each transform
+to a figure and capturing the rendered figure as a raster image, so the
+compact network is presented with a picture of a plot rather than with the
+transform. The two paths also analyse the recordings at different sample
+rates. The practical consequences are twofold. The gap between the compact
+network and the transferred networks cannot be assigned to initialisation,
+architecture, frequency axis, sample rate or input encoding, because all five
+vary together, and the linear axis images cannot be regenerated exactly by
+anyone, including us, because a figure capture depends on the resolution and
+the colour handling of the surface it was rendered on. Recomputing the linear
+axis spectrograms as arrays on the same 16~kHz material, and pairing them with
+a transferred architecture, would remove the confound and restore
+reproducibility at the same time; this is the single change we would make
+first.
+
+The evaluation is confined to one corpus and to the binary task. COUGHVID is
+crowdsourced and acoustically heterogeneous, which makes it a demanding test,
+but its recordings were contributed by people who had been asked to cough, so
+the character of its noncough class may differ from the continuous ambient
+audio a deployed detector would encounter~\cite{orlandic2021}. Nothing
+established here demonstrates that the ranking transfers to clinical
+recordings, to a different distribution of noncough material, or to the finer
+grained problem of distinguishing cough types rather than detecting coughing,
+and extending the evaluation across corpora and to multiclass respiratory
+discrimination is the direction in which the work should be taken.
+
+\section{Conclusion}\label{sec:conclusion}
+
+We have examined three design choices for binary cough detection on
+crowdsourced audio and shown that they interact in ways a single factor study
+would not reveal: perceptual frequency scaling improved every architecture to
+which it was applied, the separation between the compact network and the
+transferred networks was wider than any separation among the transferred
+networks themselves, and wavelet denoising before spectrogram extraction
+produced differences that this design is not precise enough to resolve. The best
+configuration, a residual network of moderate depth applied to denoised
+perceptual spectrograms, reached 96.53 percent accuracy with a precision of
+97.59 percent, a recall of 97.31 percent and an $F_1$ of 97.45 percent, a
+cumulative gain of 3.08 accuracy points over a compact network trained from
+scratch on linear axis spectrograms, and its advantage arose principally from
+a 43.6 percent reduction in false alarms rather than from detecting additional
+coughs. Denoising also benefited the capacity constrained network, which
+reached 96.11 percent while remaining small enough for continuous operation on
+portable hardware, but it did not benefit the densely connected network, whose
+accuracy was unchanged within rounding, and we read this as evidence that
+explicit preprocessing and architectural feature reuse address the same
+problem by different means and are therefore substitutes rather than
+complements; the practical consequence is that preprocessing and capacity
+should be selected together rather than independently, with the residual
+network and denoising preferred where accuracy is paramount and the capacity
+constrained network preferred where the detector must run continuously under a
+power budget.
+
+\begin{appendices}
+
+\section{Composition of the reported rates}\label{app:derivation}
+
+The summary rates in Table~\ref{tab:main} and the counts in
+Table~\ref{tab:resnet} are related by the definitions of
+Section~\ref{sec:s-metrics}, and the relationship is set out here so that the
+figures in the body can be checked against one another without recourse to the
+original result files.
+
+For a test partition containing $P$ cough and $N$ noncough recordings, the
+four cells of the confusion matrix follow from recall and precision by
+\begin{equation}
+\mathrm{TP} = \mathrm{Recall} \cdot P, \qquad
+\mathrm{FN} = P - \mathrm{TP},
+\label{eq:app-tp}
+\end{equation}
+\begin{equation}
+\mathrm{FP} = \mathrm{TP} \cdot
+\frac{1 - \mathrm{Precision}}{\mathrm{Precision}}, \qquad
+\mathrm{TN} = N - \mathrm{FP},
+\label{eq:app-fp}
+\end{equation}
+where Equation~\eqref{eq:app-fp} follows from rearranging the definition of
+precision in Equation~\eqref{eq:prec}. With $P = 3124$ and $N = 1453$ from
+Table~\ref{tab:split}, the ResNet18 configuration without denoising has
+$\mathrm{TP} = 0.9805 \times 3124 = 3063$ and
+$\mathrm{FP} = 3063 \times 0.0416 / 0.9584 = 133$, which are the counts
+recorded in Table~\ref{tab:resnet}.
+
+Accuracy recovered from these counts is
+\begin{equation}
+\frac{\mathrm{TP} + \mathrm{TN}}{P + N}
+= \frac{3063 + 1320}{4577} = 0.9576,
+\label{eq:app-acc}
+\end{equation}
+in agreement with the 95.76 percent reported in Table~\ref{tab:main}. The
+same arithmetic applied to the denoised configuration gives
+$(3040 + 1378)/4577 = 0.9653$, matching the 96.53 percent reported there.
+
+Two consequences of the class composition are worth stating explicitly. A
+classifier assigning every recording to the majority class would achieve
+$P/(P+N) = 0.6826$, which is the reference against which the accuracy column
+should be read. And because $P$ exceeds $N$ by a factor of 2.15, a given
+number of false positives depresses precision more than the same number of
+false negatives depresses recall, which is why the reduction of 58 false
+positives discussed in Section~\ref{sec:res-errors} moves precision by 1.75
+points while the accompanying increase of 23 false negatives moves recall by
+only 0.74 points.
+
+\end{appendices}
+
+\backmatter
+
+\begin{thebibliography}{31}
+
+\bibitem{brown2020}
+Brown, C., Chauhan, J., Grammenos, A., et al.: Exploring automatic diagnosis
+of COVID-19 from crowdsourced respiratory sound data. In: Proceedings of the
+26th ACM SIGKDD International Conference on Knowledge Discovery and Data
+Mining, pp. 3474--3484 (2020)
+
+\bibitem{imran2020}
+Imran, A., Posokhova, I., Qureshi, H.N., Masood, U., et al.: AI4COVID-19: AI
+enabled preliminary diagnosis for COVID-19 from cough samples via an app.
+Informatics in Medicine Unlocked \textbf{20}, 100378 (2020)
+
+\bibitem{laguarta2020}
+Laguarta, J., Hueto, F., Subirana, B.: COVID-19 artificial intelligence
+diagnosis using only cough recordings. IEEE Open Journal of Engineering in
+Medicine and Biology \textbf{1}, 275--281 (2020)
+
+\bibitem{orlandic2021}
+Orlandic, L., Teijeiro, T., Atienza, D.: The COUGHVID crowdsourcing dataset, a
+corpus for the study of large-scale cough analysis algorithms. Scientific Data
+\textbf{8}(1) (2021)
+
+\bibitem{swarnkar2013}
+Swarnkar, V., Abeyratne, U.R., Chang, A.B., Amrulloh, Y.A., et al.: Automatic
+identification of wet and dry cough in pediatric patients with respiratory
+diseases. Annals of Biomedical Engineering \textbf{41}(5), 1016--1028 (2013)
+
+\bibitem{hoyosbarcelo2018}
+Hoyos-Barcel\'o, C., Monge-\'Alvarez, J., Shakir, M.Z., et al.: Efficient
+$k$-NN implementation for real-time detection of cough events in smartphones.
+IEEE Journal of Biomedical and Health Informatics \textbf{22}(5), 1662--1671
+(2018)
+
+\bibitem{mongealvarez2019}
+Monge-\'Alvarez, J., Hoyos-Barcel\'o, C., Lesso, P., Casaseca-de-la-Higuera,
+P.: Robust detection of audio-cough events using local Hu moments. IEEE
+Journal of Biomedical and Health Informatics \textbf{23}(1), 184--196 (2019)
+
+\bibitem{piczak2015}
+Piczak, K.J.: Environmental sound classification with convolutional neural
+networks. In: Proceedings of the IEEE 25th International Workshop on Machine
+Learning for Signal Processing, pp. 1--6 (2015)
+
+\bibitem{hershey2017}
+Hershey, S., Chaudhuri, S., Ellis, D.P.W., Gemmeke, J.F., et al.: CNN
+architectures for large-scale audio classification. In: Proceedings of the
+IEEE International Conference on Acoustics, Speech and Signal Processing,
+pp. 131--135 (2017)
+
+\bibitem{salamon2017}
+Salamon, J., Bello, J.P.: Deep convolutional neural networks and data
+augmentation for environmental sound classification. IEEE Signal Processing
+Letters, pp. 279--283 (2017)
+
+\bibitem{deng2009}
+Deng, J., Dong, W., Socher, R., Li, L.-J., et al.: ImageNet: a large-scale
+hierarchical image database. In: Proceedings of the IEEE Conference on
+Computer Vision and Pattern Recognition, pp. 248--255 (2009)
+
+\bibitem{pan2010}
+Pan, S.J., Yang, Q.: A survey on transfer learning. IEEE Transactions on
+Knowledge and Data Engineering \textbf{22}(10), 1345--1359 (2010)
+
+\bibitem{davis1980}
+Davis, S., Mermelstein, P.: Comparison of parametric representations for
+monosyllabic word recognition in continuously spoken sentences. IEEE
+Transactions on Acoustics, Speech, and Signal Processing \textbf{28}(4),
+357--366 (1980)
+
+\bibitem{mallat1989}
+Mallat, S.G.: A theory for multiresolution signal decomposition: the wavelet
+representation. IEEE Transactions on Pattern Analysis and Machine Intelligence
+\textbf{11}(7), 674--693 (1989)
+
+\bibitem{donoho1994}
+Donoho, D.L., Johnstone, I.M.: Ideal spatial adaptation by wavelet shrinkage.
+Biometrika \textbf{81}(3), 425--455 (1994)
+
+\bibitem{donoho1995}
+Donoho, D.L.: De-noising by soft-thresholding. IEEE Transactions on
+Information Theory \textbf{41}(3), 613--627 (1995)
+
+\bibitem{johnstone2005}
+Johnstone, I.M., Silverman, B.W.: Empirical Bayes selection of wavelet
+thresholds. The Annals of Statistics \textbf{33}(4), 1700--1752 (2005)
+
+\bibitem{brown2001}
+Brown, L.D., Cai, T.T., DasGupta, A.: Interval estimation for a binomial
+proportion. Statistical Science \textbf{16}(2), 101--133 (2001)
+
+\bibitem{chicco2020}
+Chicco, D., Jurman, G.: The advantages of the Matthews correlation
+coefficient over F1 score and accuracy in binary classification evaluation.
+BMC Genomics \textbf{21}, 6 (2020)
+
+\bibitem{dietterich1998}
+Dietterich, T.G.: Approximate statistical tests for comparing supervised
+classification learning algorithms. Neural Computation \textbf{10}(7),
+1895--1923 (1998)
+
+\bibitem{nemati2019}
+Nemati, E., Rahman, M.M., Nathan, V., Vatanparvar, K.: A comprehensive
+approach for cough type detection. In: Proceedings of the IEEE/ACM
+International Conference on Connected Health, pp. 15--16 (2019)
+
+\bibitem{sharma2020}
+Sharma, N., Krishnan, P., Kumar, R., Ramoji, S., et al.: Coswara: a database
+of breathing, cough, and voice sounds for COVID-19 diagnosis. In: Proceedings
+of Interspeech, pp. 4811--4815 (2020)
+
+\bibitem{pahar2021}
+Pahar, M., Klopper, M., Warren, R., Niesler, T.: COVID-19 cough
+classification using machine learning and global smartphone recordings.
+Computers in Biology and Medicine \textbf{135}, 104572 (2021)
+
+\bibitem{coppock2021}
+Coppock, H., Gaskell, A., Tzirakis, P., Baird, A., et al.: End-to-end
+convolutional neural network enables COVID-19 detection from breath and cough
+audio. BMJ Innovations \textbf{7}(2), 356--362 (2021)
+
+\bibitem{dentamaro2022}
+Dentamaro, V., Giglio, P., Impedovo, D., Moretti, L., et al.: AUCO ResNet: an
+end-to-end network for COVID-19 pre-screening from cough and breath. Pattern
+Recognition \textbf{127}, 108656 (2022)
+
+\bibitem{vijayakumar2021}
+Vijayakumar, D.S., Sneha, M.: Low cost COVID-19 preliminary diagnosis
+utilizing cough samples and keenly intellective deep learning approaches.
+Alexandria Engineering Journal \textbf{60}(1), 549--557 (2021)
+
+\bibitem{lella2021}
+Lella, K.K., Pja, A.: Automatic COVID-19 disease diagnosis using 1D
+convolutional neural network and augmentation with human respiratory sound
+based on parameters: cough, breath, and voice. AIMS Public Health
+\textbf{8}(2), 240--264 (2021)
+
+\bibitem{son2022}
+Son, M.-J., Lee, S.-P.: COVID-19 diagnosis from crowdsourced cough sound data.
+Applied Sciences \textbf{12}(4), 1795 (2022)
+
+\bibitem{ijaz2022}
+Ijaz, A., Nabeel, M., Masood, U., Mahmood, T., et al.: Towards using cough for
+respiratory disease diagnosis by leveraging artificial intelligence: a survey.
+Informatics in Medicine Unlocked \textbf{29}, 100832 (2022)
+
+\bibitem{gemmeke2017}
+Gemmeke, J.F., Ellis, D.P.W., Freedman, D., Jansen, A., et al.: Audio Set: an
+ontology and human-labeled dataset for audio events. In: Proceedings of the
+IEEE International Conference on Acoustics, Speech and Signal Processing,
+pp. 776--780 (2017)
+
+\bibitem{he2016}
+He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image
+recognition. In: Proceedings of the IEEE Conference on Computer Vision and
+Pattern Recognition, pp. 770--778 (2016)
+
+\bibitem{huang2017}
+Huang, G., Liu, Z., Van Der Maaten, L., Weinberger, K.Q.: Densely connected
+convolutional networks. In: Proceedings of the IEEE Conference on Computer
+Vision and Pattern Recognition, pp. 2261--2269 (2017)
+
+\bibitem{sandler2018}
+Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., et al.: MobileNetV2: inverted
+residuals and linear bottlenecks. In: Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition, pp. 4510--4520 (2018)
+
+\bibitem{karatas2021}
+Karatas, M., Adali, H., Aydin, H., Dalkilic, G.: Mobile application that
+detects COVID-19 from cough and image using smartphone recordings and machine
+learning. In: Proceedings of the International Conference on Innovations in
+Intelligent Systems and Applications, pp. 1--6 (2021)
+
+\bibitem{awais2021}
+Awais, M., Bin Iqbal, M.T., Bae, S.-H.: Revisiting internal covariate shift
+for batch normalization. IEEE Transactions on Neural Networks and Learning
+Systems \textbf{32}(11), 5082--5092 (2021)
+
+\end{thebibliography}
+
+\section*{Declarations}
+
+\begin{itemize}
+\item \textbf{Supplementary information} \; Not applicable.
+
+\item \textbf{Acknowledgements} \; The authors thank the School of Electronics
+Engineering, Vellore Institute of Technology, Chennai, for providing the
+computational facilities used in this study.
+
+\item \textbf{Funding} \; No funding was received for this research.
+
+\item \textbf{Conflict of interest/Competing interests} \; The authors declare
+that they have no competing interests.
+
+\item \textbf{Ethics approval} \; Not applicable. The study analyses a
+publicly available corpus of crowdsourced cough recordings only and involves
+no human participants, human data or animals.
+
+\item \textbf{Consent to participate} \; Not applicable.
+
+\item \textbf{Consent for publication} \; All authors consent to the
+publication of this manuscript.
+
+\item \textbf{Availability of data, materials and code} \; The study uses the
+publicly available COUGHVID corpus of crowdsourced cough recordings,
+distributed by its originators under the terms stated in the publication
+describing it~\cite{orlandic2021}. No new recordings were collected. The
+processing chain was implemented in MATLAB using the Deep Learning Toolbox,
+with the corpus partition reported in Table~\ref{tab:split} and the training
+configuration reported in Table~\ref{tab:train}.
+\end{itemize}
+
+\end{document}

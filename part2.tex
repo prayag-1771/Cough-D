@@ -1,0 +1,625 @@
+\section{System design}\label{sec:design}
+
+This section specifies the processing chain in the order a recording passes
+through it, and then the four classifiers placed at its end.
+Section~\ref{sec:d-overview} gives the shape of the pipeline and fixes
+notation. Section~\ref{sec:d-cond} covers audio conditioning.
+Section~\ref{sec:d-wav} develops the wavelet denoising stage.
+Section~\ref{sec:d-spec} covers the two spectrogram representations.
+Section~\ref{sec:d-arch} describes the four architectures, and
+Section~\ref{sec:d-why} states why this particular set was chosen.
+
+\subsection{Overview and notation}\label{sec:d-overview}
+
+Let $x[n]$ denote a recording sampled at rate $f_s$, and let
+$y \in \{\text{cough}, \text{noncough}\}$ denote the label to be predicted.
+The pipeline applies four operations in sequence. The waveform is brought to a
+common sampling rate and channel count; it is optionally denoised in a wavelet
+basis; it is converted to a time frequency image; and the image is classified.
+Figure~\ref{fig:pipeline} shows the arrangement, including the branch point at
+which the two spectrogram representations diverge and the optional stage whose
+contribution is the question this paper poses.
+
+The optional stage is what makes the design a factorial one rather than a
+single pipeline. Writing $\mathcal{W}$ for the denoising operator,
+$\mathcal{S}$ for the spectrogram operator and $g_\theta$ for a classifier
+with parameters $\theta$, the eight configurations evaluated in
+Section~\ref{sec:results} are
+\begin{equation}
+\hat{y} = g_\theta\big(\mathcal{S}(\mathcal{W}^{\,\delta}(x))\big),
+\qquad \delta \in \{0, 1\},
+\label{eq:config}
+\end{equation}
+with $\delta = 1$ indicating that denoising is applied and $\delta = 0$ that
+it is bypassed, and with $\mathcal{S}$ and $g_\theta$ ranging over the
+representations and architectures described below. Holding everything outside
+Equation~\eqref{eq:config} fixed is what allows the effect of $\delta$ to be
+attributed to denoising rather than to an incidental difference in the
+experimental conditions.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=6mm,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=4pt,
+              minimum height=9mm, font=\footnotesize},
+  opt/.style={box, dashed},
+  ar/.style={-{Latex[length=2mm]}, thick}
+]
+\node[box] (wav) {Recording\\(WAV)};
+\node[box, right=of wav] (rs) {Resample 16~kHz\\mono};
+\node[opt, right=of rs] (wd) {Wavelet denoise\\sym4, $J=6$};
+\node[box, right=of wd, yshift=8mm] (stft) {Linear axis\\spectrogram};
+\node[box, right=of wd, yshift=-8mm] (mel) {Perceptual axis\\spectrogram};
+\node[box, right=of stft] (cnn) {Compact network\\(from scratch)};
+\node[box, right=of mel] (tl) {ResNet18\\MobileNetV2\\DenseNet201};
+\node[box, right=of cnn, yshift=-8mm] (out) {Cough /\\noncough};
+
+\draw[ar] (wav) -- (rs);
+\draw[ar] (rs) -- (wd);
+\draw[ar] (wd.east) -- ++(3mm,0) |- (stft.west);
+\draw[ar] (wd.east) -- ++(3mm,0) |- (mel.west);
+\draw[ar] (stft) -- (cnn);
+\draw[ar] (mel) -- (tl);
+\draw[ar] (cnn.east) -- ++(3mm,0) |- (out.west);
+\draw[ar] (tl.east) -- ++(3mm,0) |- (out.west);
+\draw[ar] (rs.south) -- ++(0,-20mm) -| (mel.south);
+\end{tikzpicture}
+\caption{Processing chain. The denoising stage is drawn dashed because it is
+present in half of the configurations and absent in the other half, which is
+the comparison the study is built around. The lower path from the resampling
+stage carries the undenoised signal directly to spectrogram extraction.
+Beyond the stage order, the figure shows that the two spectrogram
+representations are formed from the same conditioned waveform, so any
+difference in the results attaches to the frequency axis rather than to
+anything earlier.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Audio conditioning}\label{sec:d-cond}
+
+Recordings arrive at heterogeneous sampling rates and channel counts, and both
+are normalised before anything else is done. Files recorded in stereo are
+reduced to a single channel by averaging, which preserves content common to
+both channels and attenuates anything uncorrelated between them. All material
+is then resampled to $f_s = 16$~kHz.
+
+The choice of rate is a compromise between fidelity and cost. A rate of
+16~kHz places the Nyquist limit at 8~kHz, which retains the spectral region in
+which cough energy is concentrated while discarding content above it, and it
+reduces the sample count of a typical recording by roughly two thirds relative
+to the 44.1~kHz material that consumer devices commonly produce. The explosive
+onset of a cough does deposit some energy above 8~kHz, so the choice is not
+free of cost; the justification is that the discriminative information is
+dominated by the lower range and that the reduction in sample count propagates
+through every subsequent stage, including the wavelet decomposition, whose
+cost is linear in signal length.
+
+\subsection{Wavelet denoising}\label{sec:d-wav}
+
+Denoising is performed in a wavelet basis rather than by filtering in the
+frequency domain, for a reason specific to the signal. A cough is a transient,
+so its energy is localised in time and spread across frequency, which is the
+opposite of the profile that a fixed frequency domain filter handles well. A
+wavelet basis represents the signal at several resolutions at once and so can
+distinguish a short broadband event from sustained interference occupying the
+same band, which a filter cannot.
+
+The decomposition expresses the signal as a coarse approximation at level $J$
+together with the detail removed at every level above it,
+\begin{equation}
+x[n] = A_J[n] + \sum_{j=1}^{J} D_j[n],
+\label{eq:mra}
+\end{equation}
+where $A_J[n]$ holds the low frequency content remaining after $J$ successive
+halvings of the band and $D_j[n]$ holds the detail at level $j$. Each
+level separates the current approximation into a new approximation and a
+detail band, so $D_1$ carries the highest frequency octave and $D_J$ the
+lowest of those removed. We set $J = 6$ and use the sym4 wavelet, a member of
+the symlet family chosen because it is nearly symmetric, which limits the
+phase distortion introduced into the reconstructed transient, and because its
+support is short enough to remain localised against events lasting a few tens
+of milliseconds.
+
+Denoising proceeds by attenuating detail coefficients whose magnitude is
+consistent with noise rather than with signal. The classical treatment fixes
+a threshold per level and shrinks each coefficient toward zero by that
+amount, discarding those that do not survive the
+subtraction~\cite{donoho1994, donoho1995}. The procedure used here is the
+empirical Bayesian alternative, which places a mixture prior on the detail
+coefficients at each level,
+\begin{equation}
+d_{j,k} \sim (1 - w_j)\,\delta_0 + w_j\,\gamma,
+\label{eq:eb}
+\end{equation}
+where $\delta_0$ is a point mass at zero, $\gamma$ is a heavy tailed Cauchy
+density and the mixing weight $w_j$ is estimated from the coefficients at
+level $j$ by marginal maximum likelihood. Each coefficient is then replaced
+by the median of its posterior distribution~\cite{johnstone2005}. Because
+$w_j$ is estimated separately at every level, the amount of shrinkage adapts
+to how much of the energy at that scale is attributable to noise instead of
+being set by one global rule, and the heavy tail of the prior leaves large
+coefficients close to unshrunk. The signal is reconstructed from the retained
+approximation and the shrunken details.
+
+Figure~\ref{fig:denoise} shows the operation on one cough and one noncough
+recording, each at three stages. Reading across the top row establishes that
+the transient structure of the cough survives the operation, which is the
+property the stage must have if it is to be useful; reading down the third
+column compares what was discarded in the two cases, which is where the two
+classes differ most visibly.
+
+\begin{figure}[t]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\includegraphics[width=0.30\textwidth]{denoise_a_cough_raw.png} &
+\includegraphics[width=0.30\textwidth]{denoise_b_cough_denoised.png} &
+\includegraphics[width=0.30\textwidth]{denoise_c_cough_removed.png} \\[2pt]
+{\footnotesize (a) cough, original} &
+{\footnotesize (b) cough, denoised} &
+{\footnotesize (c) cough, removed} \\[6pt]
+\includegraphics[width=0.30\textwidth]{denoise_d_noncough_raw.png} &
+\includegraphics[width=0.30\textwidth]{denoise_e_noncough_denoised.png} &
+\includegraphics[width=0.30\textwidth]{denoise_f_noncough_removed.png} \\[2pt]
+{\footnotesize (d) noncough, original} &
+{\footnotesize (e) noncough, denoised} &
+{\footnotesize (f) noncough, removed} \\
+\end{tabular}
+\caption{Effect of the sym4 decomposition at level six on a representative
+cough recording, in the top row, and a representative noncough recording, in
+the bottom row. Each panel is a time frequency representation, with time on
+the horizontal axis and frequency on the vertical. Panels (a) and (d) show
+the conditioned input and (b) and (e) the reconstruction after shrinkage. The
+dominant transient structure of the cough is preserved from (a) to (b), which
+is the property the operation has to have if it is not to suppress the energy
+the classifier depends on. Panels (c) and (f) are diagnostic rather than
+quantitative: each is the absolute difference between the two images above it,
+rescaled to the full display range and amplified to make faint structure
+visible. They indicate where in the plane the reconstruction departs from the
+input, and that the departure avoids the region carrying the cough transient.
+Because each difference panel is rescaled independently of the other, the
+intensities in (c) and (f) are not on a common scale and the two panels should
+not be compared against each other.}
+\label{fig:denoise}
+\end{figure}
+
+The level $J = 6$ determines how much of the signal is exposed to shrinkage.
+At 16~kHz the sixth level corresponds to an approximation band below roughly
+125~Hz, so the decomposition reaches well beneath the range in which cough
+energy is concentrated and gives the thresholding access to the bands where
+both the transient and the interference reside. A shallower decomposition
+would leave low frequency interference untouched in the approximation; a
+deeper one would continue subdividing a band that by then contains little but
+the recording offset.
+
+\subsection{Spectrogram representations}\label{sec:d-spec}
+
+Both representations begin from the same conditioned waveform and differ only
+in how the frequency axis is spaced, which is what allows their comparison to
+isolate the effect of that spacing.
+
+\subsubsection{Linear frequency axis}\label{sec:d-stft}
+
+The short time Fourier transform is computed as
+\begin{equation}
+X(m, k) = \sum_{n} x[n]\, w[n - m]\, e^{-j 2 \pi k n / N},
+\label{eq:stft}
+\end{equation}
+where $m$ indexes the analysis frame, $k$ the frequency bin, $w[\cdot]$ is a
+Hamming window and $N$ is the transform length. The magnitude $|X(m,k)|$ is
+retained and the phase discarded, since the classifier operates on an image.
+
+The representation preserves the full time frequency structure of the signal
+but spaces its bins uniformly, which distributes resolution evenly across the
+spectrum. For a cough this allocation is inefficient. The region above 4~kHz
+occupies half of the available bins while carrying comparatively little of
+what separates a cough from a door closing, and the region below 500~Hz, where
+the voiced termination and much of the envelope structure reside, is
+represented by a small number of bins. This representation is used for the
+baseline network described in Section~\ref{sec:d-cnn}.
+
+\subsubsection{Perceptual frequency axis}\label{sec:d-mel}
+
+The perceptual representation warps the frequency axis according to
+\begin{equation}
+f_{\mathrm{mel}} = 2595 \log_{10}\!\left(1 + \frac{f}{700}\right),
+\label{eq:mel}
+\end{equation}
+in which $f$ is the physical frequency in hertz and $f_{\mathrm{mel}}$ the
+warped value~\cite{davis1980}. The mapping is approximately linear below
+about 700~Hz and approximately logarithmic above it, so the low frequency
+region is expanded relative to a linear axis and the high frequency region
+compressed. A bank of triangular filters spaced uniformly on this warped axis
+is applied to the magnitude spectrum, and the filter outputs are converted to
+a logarithmic amplitude scale.
+
+Figure~\ref{fig:mel} shows the mapping and the bank it produces. Panel (a)
+plots Equation~\eqref{eq:mel} against a linear reference, and the departure
+between the two curves is the redistribution of resolution the mapping
+performs. Panel (b) shows the consequence for the filters themselves, which
+is the quantity that matters for what the network receives.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{mel_mapping.png}
+\caption{The perceptual frequency mapping of Equation~\eqref{eq:mel} in panel
+(a), plotted against a linear reference over the band retained after
+resampling, and in panel (b) a reduced bank of sixteen triangular filters
+spaced uniformly on the warped axis and drawn against hertz. Beyond restating
+the mapping, the figure shows what it costs and buys: filters near the bottom
+of the band span on the order of 240~Hz while those near the top span on the
+order of 2200~Hz, so fine structure above 4~kHz is deliberately pooled away
+in exchange for resolution below 1~kHz. The bank used in the experiments has
+128 filters rather than the sixteen drawn here, which are reduced in number
+only so the individual triangles remain distinguishable.}
+\label{fig:mel}
+\end{figure}
+
+The triangular weightings overlap, each beginning at the centre of the one
+before it and ending at the centre of the one after, so that every frequency
+contributes to exactly two filters and the resulting representation is smooth
+in the filter index. Because the filters are uniformly spaced on the warped
+axis, they become progressively wider in hertz as frequency rises, which is
+what performs the compression: a filter near 4~kHz pools energy over a band
+several times wider than one near 300~Hz, and the fine structure within the
+wider band is deliberately discarded. The logarithmic amplitude scaling
+applied afterwards compresses the dynamic range so that the low energy
+portions of a recording, including the decaying tail of a cough, remain
+visible alongside the high energy onset rather than being driven to the floor
+of the image.
+
+We use a Hamming window of 512 samples with 256 samples of overlap, a
+transform length of 512 and 128 filters, and resize the resulting image to
+$224 \times 224$ pixels to match the input expected by the transferred
+architectures. At 16~kHz a 512 sample window spans 32~ms and advances by
+16~ms, which is short enough to resolve the onset of a cough as a distinct
+event and long enough to give usable frequency resolution. The resize is
+performed after the logarithmic scaling rather than before, so that
+interpolation acts on a quantity whose dynamic range has already been
+compressed.
+
+\subsection{Classification architectures}\label{sec:d-arch}
+
+Four architectures are evaluated. One is trained from random initialisation
+and three are transferred from a large image corpus with the classification
+head replaced by a two unit layer. Table~\ref{tab:arch} summarises the
+properties that bear on the comparison.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{The four architectures and the properties relevant to the
+comparison. Depth is counted as weighted layers along the principal path. The
+final column records the mechanism each architecture uses to propagate
+information across depth, which is the property this study relates to the
+benefit obtained from denoising.}
+\label{tab:arch}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Architecture & Input & Initialisation & Propagation mechanism \\
+\midrule
+Compact network & Linear axis & Random & Plain stacked convolutions \\
+ResNet18 & Perceptual axis & Transferred & Additive identity shortcuts \\
+MobileNetV2 & Perceptual axis & Transferred & Inverted residual bottlenecks \\
+DenseNet201 & Perceptual axis & Transferred & Concatenative dense reuse \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Compact network trained from scratch}\label{sec:d-cnn}
+
+The baseline comprises three convolutional layers, each followed by a pooling
+operation that halves the spatial dimensions, and two fully connected layers
+ending in a two unit output. It is trained from random initialisation on the
+linear axis spectrograms and establishes what is achievable without
+transferred weights. Its role is to separate two effects that are otherwise
+confounded: the gain from the perceptual frequency axis and the gain from
+transferred initialisation. Because this model differs from the others in both
+respects, it is treated throughout as a reference point rather than as a
+competitor, and the comparisons that carry the argument of the paper are made
+among the three transferred models.
+
+\subsubsection{Residual network}\label{sec:d-resnet}
+
+ResNet18 introduces additive shortcut connections that carry the input of a
+block forward to its output, so that each block learns a residual correction
+rather than a complete transformation~\cite{he2016}. The arrangement allows
+gradients to reach early layers without attenuation through the intervening
+nonlinearities, which is what permits depth to be increased without the
+degradation that plagued plain stacks. At eighteen weighted layers it is the
+shallowest of the three transferred models, and its capacity is moderate by
+current standards, which is the property that makes it informative here.
+
+\subsubsection{Inverted residual network}\label{sec:d-mobilenet}
+
+MobileNetV2 is designed for deployment under tight memory and power budgets.
+It replaces standard convolutions with depthwise separable ones, factorising a
+convolution into a spatial filtering step applied per channel and a pointwise
+combination across channels, which reduces the parameter count and the
+arithmetic by roughly an order of magnitude for a given receptive field. Its
+blocks expand the channel dimension internally and project back to a narrow
+linear bottleneck, with the shortcut connecting the bottlenecks rather than the
+expanded representations~\cite{sandler2018}. Including it tests whether a
+detector of practical size on portable hardware can approach the accuracy of a
+larger model, which matters because a cough detector is most useful where it
+can run continuously.
+
+\subsubsection{Densely connected network}\label{sec:d-densenet}
+
+DenseNet201 connects every layer within a block to all preceding layers by
+concatenation rather than addition, so a layer has direct access to every
+feature map produced before it~\cite{huang2017}. The arrangement strengthens
+gradient flow and reduces redundancy, since a feature computed once need not
+be recomputed downstream. It is by a wide margin the deepest of the models
+considered. Its inclusion is deliberate rather than incidental: if the benefit
+of denoising diminishes as a network becomes better able to form
+representations that ignore interference, then the architecture with the most
+extensive feature reuse is where that diminution should be visible, and
+Section~\ref{sec:res-denoise} reports what is observed.
+
+\subsection{Rationale for the architecture set}\label{sec:d-why}
+
+The four models were not selected for coverage of the literature but to span
+the mechanisms by which a network can achieve robustness to interference. The
+compact network has no such mechanism beyond pooling. ResNet18 propagates
+information additively through a moderate depth. MobileNetV2 is explicitly
+constrained in capacity, so whatever robustness it attains must come from
+structure rather than from parameters. DenseNet201 maximises feature reuse.
+If denoising substitutes for architectural robustness, as
+Section~\ref{sec:rel-denoise} argues it should, then its benefit ought to
+decline along this ordering, and the set is arranged so that the prediction
+can be tested.
+
+\subsection{Computational considerations}\label{sec:d-cost}
+
+The pipeline is intended for a setting in which audio arrives continuously, so
+the cost of each stage is worth stating, both because it bounds what can run
+on portable hardware and because it determines whether the optional denoising
+stage is worth its place.
+
+Conditioning is linear in the number of samples. For a recording of duration
+$T$ seconds the resampling operation touches $T f_s$ samples once, and the
+channel reduction is a single pass over the same data. The wavelet
+decomposition of Equation~\eqref{eq:mra} is likewise linear: a fast wavelet
+transform to level $J$ performs filtering and downsampling at each level, and
+because each level operates on half the samples of the one before, the total
+work is bounded by
+\begin{equation}
+\sum_{j=0}^{J-1} c \cdot \frac{T f_s}{2^{j}} < 2 c \, T f_s,
+\label{eq:cost-dwt}
+\end{equation}
+where $c$ is the cost per sample of the filter pair. The decomposition
+therefore costs less than twice a single filtering pass regardless of $J$,
+which is why increasing the decomposition level is inexpensive and why the
+choice of $J$ was governed by the band structure of the signal rather than by
+cost. Thresholding and reconstruction are of the same order.
+
+Spectrogram extraction is dominated by the transforms. With a window of
+$L$ samples advancing by $L/2$, a recording yields approximately
+$2 T f_s / L$ frames, each requiring a transform of cost
+$\mathcal{O}(L \log L)$, so the total is $\mathcal{O}(T f_s \log L)$. The
+perceptual representation adds the filter bank, which applies $M$ triangular
+weightings to each frame at a cost proportional to $M L / 2$ per frame, and
+the subsequent resize to the network input size. These are small relative to
+the transforms themselves.
+
+Inference dominates everything preceding it. A forward pass through a
+transferred architecture on a $224 \times 224$ input requires on the order of
+$10^8$ to $10^9$ multiply accumulate operations depending on the model, which
+exceeds the cost of the entire preprocessing chain for a recording of a few
+seconds by two or more orders of magnitude. Two consequences follow. The
+first is that the denoising stage should be judged on whether it improves the
+result rather than on its cost, which is negligible in comparison. The second
+is that the choice of architecture is the decision that determines whether the
+system can run continuously, which is the reason a capacity constrained model
+is included in the comparison at all and why its result is reported alongside
+the most accurate one in Section~\ref{sec:res-deploy} rather than being
+treated as an also ran.
+
+\section{Experimental setup}\label{sec:setup}
+
+This section gives the corpus and its partition, the training configuration,
+the metrics, and the information required to repeat the experiments.
+Section~\ref{sec:s-data} describes the data, Section~\ref{sec:s-train} the
+optimisation, Section~\ref{sec:s-metrics} the measures reported, and
+Section~\ref{sec:s-repro} the reproducibility details.
+
+\subsection{Corpus and partition}\label{sec:s-data}
+
+Experiments use COUGHVID, an open corpus of crowdsourced recordings collected
+through a web interface~\cite{orlandic2021}. Contributors submitted audio from
+their own devices in their own surroundings, with no control over microphone
+quality, distance, background noise or recording level, and a substantial
+fraction of submissions contain no cough. That heterogeneity is the reason the
+corpus is appropriate for the present question: a detector evaluated on
+studio material would not be tested against the conditions that make
+denoising worth considering.
+
+All recordings were converted to WAV and assigned to one of two classes,
+cough or noncough, and partitioned into training and test sets.
+Table~\ref{tab:split} gives the composition. The partition is fixed across all
+eight configurations, so every model is trained on the same recordings and
+measured on the same held out material, and differences between configurations
+cannot be attributed to a favourable split.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Composition of the partition, identical for all eight
+configurations. The imbalance of roughly 2.15 to 1 in favour of cough is a
+property of the collection rather than of the partition, and
+Section~\ref{sec:res-errors} shows that it inflates accuracy relative to
+measures that weight the classes equally.}
+\label{tab:split}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Partition & Cough & Noncough & Total \\
+\midrule
+Training & 12{,}495 & 5{,}808 & 18{,}303 \\
+Test & 3{,}124 & 1{,}453 & 4{,}577 \\
+\midrule
+Total & 15{,}619 & 7{,}261 & 22{,}880 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The imbalance deserves comment because it conditions how the results in
+Section~\ref{sec:results} should be read. Coughs outnumber noncoughs by
+slightly more than two to one in both partitions, which reflects the fact that
+contributors to the corpus were asked to cough. A classifier that labelled
+every test recording as cough would therefore be correct on 3,124 of 4,577
+occasions, an accuracy of 68.26 percent, without having learned anything at
+all. Every accuracy figure reported below should be read against that
+reference rather than against 50 percent.
+
+\subsection{Training configuration}\label{sec:s-train}
+
+All models were trained in MATLAB using the Deep Learning Toolbox on a
+workstation with an NVIDIA RTX 4050 graphics processor. Optimisation used
+Adam with a batch size of 32 throughout, a learning rate of $10^{-3}$ for
+every model except DenseNet201, and $10^{-4}$ for DenseNet201.
+Table~\ref{tab:train} records the settings, including the three points on
+which the configurations are not uniform.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Training configuration. The epoch budget and the learning rate are
+the two respects in which the transferred models were not treated
+identically, and the material held out for measurement was also the material
+monitored during training. Section~\ref{sec:res-limits} states what each of
+these costs the interpretation of the results.}
+\label{tab:train}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Setting & Value \\
+\midrule
+Framework & MATLAB Deep Learning Toolbox \\
+Hardware & NVIDIA RTX 4050 \\
+Optimiser & Adam \\
+Learning rate, all models except DenseNet201 & $10^{-3}$ \\
+Learning rate, DenseNet201 & $10^{-4}$ \\
+Batch size & 32 \\
+Epochs, compact network, ResNet18, MobileNetV2 & 10 \\
+Epochs, DenseNet201 & 3 \\
+Monitoring interval & every 50 iterations (ResNet18, MobileNetV2) \\
+ & every 200 iterations (DenseNet201) \\
+Data used for monitoring & the test partition \\
+Network retained & the one at the final iteration \\
+Random seed & not fixed \\
+Sampling rate, perceptual axis models & 16~kHz, mono \\
+Sampling rate, compact network & as recorded, mono \\
+Wavelet & sym4, level 6, empirical Bayes \\
+Linear axis spectrogram & 256 point window, 200 overlap, \\
+ & 256 point transform \\
+Perceptual spectrogram & 512 point window, 256 overlap, 128 filters \\
+Network input size & $224 \times 224$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+DenseNet201 was trained for three epochs against ten for the other two
+transferred models, because its depth makes each epoch considerably more
+expensive, and at a learning rate an order of magnitude lower. These are real
+asymmetries in the experimental design and we do not present them as anything
+else. Their consequence is discussed in Section~\ref{sec:res-limits}, where we
+set out which of our conclusions they can and cannot affect.
+
+Two further properties of the procedure must be stated plainly, because they
+bear on how every number in Section~\ref{sec:results} should be read. The
+first is that no separate validation partition was constructed. The test
+partition was supplied to the training routine as the data against which
+progress was monitored, and the accuracy reported for each configuration is
+measured on that same material. No quantity computed on the test partition
+was used to select weights, since the network retained is the one at the final
+iteration rather than the one at the best monitored score, but the
+arrangement removes the separation between the data used to observe training
+and the data used to report performance. The figures below are therefore not
+estimates of performance on unseen material in the strict sense, and we treat
+them as measurements on a partition that was visible throughout rather than as
+generalisation estimates.
+
+The second is that the compact network and the three transferred networks do
+not receive comparable inputs, and the difference is larger than the change of
+frequency axis alone. For the transferred models the perceptual spectrogram is
+computed as a matrix, compressed logarithmically, mapped to the unit interval
+and written as a single channel image, which is then replicated across three
+channels at load time. For the compact network the linear axis spectrogram is
+drawn to a figure and the rendered figure is captured as a raster image, so
+the network receives a picture of a plot rather than the transform itself,
+carrying the display colour map and whatever resolution the rendering surface
+provided. The two paths also differ in sample rate, because the recordings are
+resampled to 16~kHz only on the perceptual axis branch. The comparison between
+the compact network and the transferred networks therefore varies five things
+at once, and Section~\ref{sec:res-limits} explains why we decline to attribute
+the difference between them to any one of the five.
+
+\subsection{Evaluation metrics}\label{sec:s-metrics}
+
+Let TP and TN denote correctly classified cough and noncough recordings, and
+FP and FN the two error types, where a false positive is a noncough recording
+labelled as a cough. The primary measures are
+\begin{align}
+\text{Accuracy} &= \frac{\mathrm{TP} + \mathrm{TN}}
+{\mathrm{TP} + \mathrm{TN} + \mathrm{FP} + \mathrm{FN}}, \label{eq:acc} \\[4pt]
+\text{Precision} &= \frac{\mathrm{TP}}{\mathrm{TP} + \mathrm{FP}},
+\label{eq:prec} \\[4pt]
+\text{Recall} &= \frac{\mathrm{TP}}{\mathrm{TP} + \mathrm{FN}},
+\label{eq:rec} \\[4pt]
+F_1 &= \frac{2 \cdot \text{Precision} \cdot \text{Recall}}
+{\text{Precision} + \text{Recall}}. \label{eq:f1}
+\end{align}
+
+Precision and recall are reported alongside accuracy because the two error
+types carry unequal cost in this application. A false negative is a cough that
+goes unrecorded, which in a monitored period may be recovered when the person
+coughs again. A false positive admits audio containing no cough into a
+downstream analysis that was not trained on such material, and the resulting
+output is reported with a confidence value it has not earned. Precision is
+therefore the quantity a screening deployment watches most closely, and
+Section~\ref{sec:res-errors} examines how it is composed for the leading
+configuration.
+
+Because the partition is imbalanced, accuracy alone would be a misleading
+summary, and all four measures are reported for every configuration so that a
+gain arising from a shift toward the majority class can be distinguished from
+a genuine improvement. The relationship between the four rates and the
+underlying counts is set out in Appendix~\ref{app:derivation}.
+
+\subsection{Reproducibility}\label{sec:s-repro}
+
+A single run consists of the following steps, performed end to end for one
+configuration. Every recording in the corpus is read, reduced to mono and
+resampled to 16~kHz. Where the configuration calls for it, the waveform is
+denoised by a level six sym4 decomposition with soft thresholding and
+reconstructed. The conditioned waveform is converted to the spectrogram
+representation the configuration specifies and, for the transferred models,
+resized to $224 \times 224$. The classifier is initialised, either randomly or
+from transferred weights with a replaced two unit head, and optimised with the
+settings of Table~\ref{tab:train} over the 18,303 training recordings. The
+trained model is then applied once to the 4,577 test recordings and the
+confusion counts recorded, from which the rates reported in
+Table~\ref{tab:main} are computed.
+
+The experimental grid is the full cross of two factors over four
+architectures, with the constraint that the compact network is paired only
+with the linear axis representation and the transferred models only with the
+perceptual one. This yields eight runs: the compact network with and without
+denoising, and each of ResNet18, MobileNetV2 and DenseNet201 with and without
+denoising. Each run is trained once, so the figures reported carry no estimate
+of variation across random initialisations, a limitation addressed in
+Section~\ref{sec:res-limits}.
+
+Two secondary analyses are reported alongside the primary results. The first
+takes the difference between the paired runs of each architecture, answering
+the question of whether denoising acts in the same direction and by the same
+mechanism across the four models rather than merely whether it raises
+accuracy; its result appears in Table~\ref{tab:delta}. The second examines
+the confusion counts of the two ResNet18 configurations, answering the
+question of how the improvement attributed to denoising is distributed
+between the two error types; its result appears in Table~\ref{tab:resnet}.
+Both use quantities recorded during the
+evaluation runs described above and require no additional training. The
+arithmetic relating the counts to the summary rates is given in
+Appendix~\ref{app:derivation}, so that every figure in the body can be
+checked against every other.

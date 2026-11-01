@@ -1,0 +1,43 @@
+# Corpora and everything derived from them. These are redistributable only
+# from their own sources, and the image sets run to tens of thousands of files.
+# Every one of them is reproducible from the ingest scripts in code/.
+data/
+
+# Selected network weights. Roughly 45 MB per run.
+weights/
+
+# Decoded image caches written beside the image sets.
+*.npz
+
+# Runs made under the superseded training protocol, kept locally only so the
+# change of protocol can be re-examined. They are not the results reported.
+runs_old_protocol/
+
+# Job output. Transient, and full of absolute paths from this machine.
+logs/
+
+# The source assignment this work extends. It is another author's document and
+# is not ours to redistribute.
+*.pdf
+
+__pycache__/
+*.pyc
+
+# LaTeX build products.
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.synctex.gz
+*.toc
+
+# Editor backups.
+*.bak
+
+# MATLAB listing lifted from the source assignment. Another author's code.
+code_extracted.txt
