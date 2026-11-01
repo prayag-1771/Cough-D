@@ -131,12 +131,29 @@ def label_of(base):
     return None, None
 
 
+_ZIPS = {}
+
+
+def _zip_for(path):
+    """One open archive per worker process, not one per clip.
+
+    Reopening an archive parses its whole central directory, which for a
+    corpus of this size costs more than decoding the audio. A pool worker
+    handles many clips, so the handle is opened once and kept. The dictionary
+    is per process, because pool workers are separate processes and a ZipFile
+    cannot be shared across them.
+    """
+    z = _ZIPS.get(path)
+    if z is None:
+        z = _ZIPS[path] = zipfile.ZipFile(path)
+    return z
+
+
 def _one(args):
     """Pool entry point. Must stay module level to survive spawn on Windows."""
     zip_path, member, base, label, out_root = args
     try:
-        with zipfile.ZipFile(zip_path) as z:
-            data = z.read(member)
+        data = _zip_for(zip_path).read(member)
         tmp = os.path.join(out_root, '_tmp', base)
         with open(tmp, 'wb') as fh:
             fh.write(data)

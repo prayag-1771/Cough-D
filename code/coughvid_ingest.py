@@ -127,13 +127,31 @@ def match_prior(cough, non, how, seed):
     return cough, non
 
 
+_ZIPS = {}
+
+
+def _zip_for(path):
+    """One open archive per worker process, not one per recording.
+
+    This archive's central directory holds 68,869 entries, and opening it cost
+    more than decoding the audio did: measured at 30 recordings a minute, the
+    selection would have taken nearly five hours. A pool worker handles many
+    recordings in its lifetime, so the handle is opened once and kept. The
+    dictionary is per process, because pool workers are separate processes and
+    a ZipFile cannot be shared across them.
+    """
+    z = _ZIPS.get(path)
+    if z is None:
+        z = _ZIPS[path] = zipfile.ZipFile(path)
+    return z
+
+
 def _one(args):
     """Pool entry point. Must stay module level to survive spawn on Windows."""
     zip_path, member, uuid, label, out_root = args
     tmp = os.path.join(out_root, '_tmp', uuid + os.path.splitext(member)[1])
     try:
-        with zipfile.ZipFile(zip_path) as z:
-            data = z.read(member)
+        data = _zip_for(zip_path).read(member)
         with open(tmp, 'wb') as fh:
             fh.write(data)
         x = spectro.decode(tmp)

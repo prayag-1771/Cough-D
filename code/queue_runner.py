@@ -78,7 +78,14 @@ PS_PIDS = (
 
 DETACHED = 0
 if os.name == 'nt':
-    DETACHED = (0x00000008 |        # DETACHED_PROCESS
+    # CREATE_NO_WINDOW, not DETACHED_PROCESS. A detached process cannot
+    # duplicate handles to children, so any job that builds a process pool
+    # dies inside multiprocessing with "WinError 5 Access is denied" from
+    # DuplicateHandle. That is what killed the first ingest run after three
+    # minutes. CREATE_NO_WINDOW gives the same absence of a console window
+    # while leaving handle inheritance intact, and the job still outlives this
+    # process because nothing waits on it.
+    DETACHED = (0x08000000 |        # CREATE_NO_WINDOW
                 0x00000200 |        # CREATE_NEW_PROCESS_GROUP
                 0x00004000)         # BELOW_NORMAL_PRIORITY_CLASS
 
