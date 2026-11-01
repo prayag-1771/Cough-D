@@ -1,0 +1,107 @@
+\section{Related work and its limitations}\label{sec:related}
+
+The literature this work sits in divides into three strands, and the gap it addresses lies
+between them. Section~\ref{sec:rel-class} covers classifiers built on cough and
+respiratory audio, Section~\ref{sec:rel-eval} covers what has since been established
+about how their performance was measured, and Section~\ref{sec:rel-denoise} covers
+denoising as a preprocessing step and states what the present work supplies that none of
+these provide.
+
+\subsection{Classifiers on cough and respiratory audio}\label{sec:rel-class}
+
+Interest in classifying respiratory audio grew sharply during the COVID-19 pandemic, and
+the resulting body of work established the pipeline this paper studies. An early mobile
+system passed three second cough recordings to a cloud classifier and returned a
+screening result, reporting that it was a screening aid rather than a clinical grade
+test~\cite{imran2020}. A convolutional model trained on recordings collected through a web
+form reported $98.5$ per cent sensitivity at $94.2$ per cent specificity against official
+test results~\cite{laguarta2020}. Working from the Coswara corpus together with a smaller
+clinical collection, a comparison of seven classifiers reported area under the curve of
+$0.98$ separating positive from healthy coughs, and additionally observed that positive
+coughs were some $15$ to $20$ per cent shorter~\cite{pahar2021}.
+
+The supporting corpora were assembled over the same period, and their design decisions
+shape what can be asked of them. Coswara records each participant performing a prescribed
+sequence of breathing, cough and voice tasks and carries a participant
+identifier~\cite{coswara2020}. COUGHVID gathered some $34{,}000$ recordings through a web
+form and, because no human could annotate them all, shipped the output of a cough
+detector as a per recording score~\cite{coughvid2021}. A larger crowdsourced collection
+assembled over $53{,}000$ samples from more than $36{,}000$ participants and published
+benchmarks for symptom and condition prediction~\cite{xia2021}. Outside the respiratory
+setting, general purpose audio event corpora provide human annotations against a shared
+ontology~\cite{gemmeke2017}, and one such corpus had its evaluation split exhaustively
+verified by hand~\cite{fsd50k2022}, which is what makes it usable as an independent test
+of a detector trained elsewhere.
+
+Within this strand, the specific pipeline of interest is the one that converts a
+recording into a spectrogram image and hands it to a convolutional network pretrained on
+photographs. That approach reported $98.18$ per cent accuracy on a mel spectrogram
+representation of cough audio~\cite{zhou2021}, and variants of it supply the architectures
+used here~\cite{he2016,sandler2018,huang2017}.
+
+\subsection{How the reported performance was measured}\label{sec:rel-eval}
+
+The second strand is the subsequent examination of those results, and it is the reason
+this paper is organised around measurement rather than around a new architecture. A
+systematic review of machine learning applied to COVID-19 imaging screened $2{,}212$
+studies, retained $62$ after quality assessment, and concluded that none of the models it
+examined was of potential clinical use, attributing this to methodological flaws and
+underlying biases rather than to insufficient model
+capacity~\cite{roberts2021}. The same pattern was then demonstrated directly on audio. In
+a study of $67{,}842$ participants, classifiers that reached $0.846$ area under the curve
+unadjusted fell to $0.619$ once confounders including self-reported symptoms were matched,
+and were outperformed by predictions from self-reported symptoms
+alone~\cite{coppock2024}. A matched analysis on crowdsourced respiratory audio reported
+$0.71$ area under the curve for a model evaluated on participant independent partitions,
+against up to $0.90$ for the same material under a less careful evaluation
+strategy~\cite{han2022}.
+
+Three specific weaknesses recur, and each is addressed by a part of the present design.
+The first is the split. Where a partition is made over recordings rather than
+contributors, a contributor can appear on both sides of it. One study reports both
+variants and so quantifies the cost: $98.18$ per cent under a random split against
+$95.18$ per cent when test coughs came from recordings unseen in training, a gap it
+presents without comment~\cite{zhou2021}. The second is what the learned representation
+actually encodes. A recent cross-dataset evaluation of cough models found that
+performance moderate within a corpus falls below $0.6$ area under the curve on
+independent data, and that the representations cluster by recording device and corpus
+rather than by the condition being detected~\cite{zhang2026}; two of its authors are also
+authors of COUGHVID~\cite{coughvid2021}. The third is the absence of any estimate of run
+to run variation, which leaves differences of well under one accuracy point reported as
+findings with nothing to read them against.
+
+A fourth weakness is specific to corpora whose labels come from a classifier. Where the
+label is a thresholded detector score, a model is measured on its agreement with that
+detector and not on whether a cough is present, and this distinction is frequently left
+implicit. It cannot be resolved by better modelling, only by stating the regime and, where
+possible, comparing across regimes.
+
+\subsection{Denoising as a preprocessing step}\label{sec:rel-denoise}
+
+The third strand is the preprocessing itself. Wavelet shrinkage has a well established
+theory: the universal threshold with soft thresholding comes with an oracle
+inequality~\cite{donoho1994}, a level adaptive threshold derived in a Bayesian framework
+improves on it for image data~\cite{chang2000}, and an empirical Bayes rule with a mixture
+prior estimates the sparsity of each scale from the data rather than assuming
+it~\cite{johnstone2005}. All three rest on the same multiresolution
+decomposition~\cite{mallat1989}, and the appeal for cough audio is that shrinkage
+suppresses broadband noise while preserving transients, which is what a cough is.
+
+What is missing is a comparison that isolates the effect. Where denoising is reported to
+help, the denoised and undenoised conditions commonly differ in more than the denoising,
+the shrinkage rule is often not named even though the three rules above behave quite
+differently, and the comparison is typically between two single runs with no paired test
+and no measure of seed variation. The work this paper extends illustrates all three: its
+baseline and denoised conditions differ in architecture, in pretraining, in frequency axis
+and in sample rate simultaneously, so no cause can be assigned to the difference between
+them; its text describes soft thresholding while the routine it calls applies an empirical
+Bayes posterior median by default; and its conclusion rests on one run per condition.
+
+The present work therefore supplies what this configuration of strands leaves absent: a
+denoising comparison under a named shrinkage rule, with the architecture, the frequency
+axis, the partition and the training protocol held fixed, on a speaker disjoint partition
+in which both classes come from the same participant and session, tested on paired per
+recording decisions with a correction for multiple comparisons, repeated across seeds so
+that the size of an effect can be read against the variation between runs, and carried
+out across three label regimes rather than one. The contribution is the measurement, not
+a new architecture.
