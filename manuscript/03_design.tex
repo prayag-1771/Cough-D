@@ -1,0 +1,123 @@
+\section{System design}\label{sec:design}
+
+The pipeline turns a recording into a fixed size image and then classifies that image.
+Three choices inside it are the subject of the study, and this section takes them in the
+order the signal meets them: Section~\ref{sec:design-denoise} covers the wavelet
+denoising applied to the waveform, Section~\ref{sec:design-spectro} covers the
+spectrogram that is formed from the result, and Section~\ref{sec:design-nets} covers the
+four networks the images are shown to. Everything else about the pipeline is held fixed
+across conditions so that a difference in the outcome can be attributed to one of these
+three.
+
+\subsection{Wavelet denoising of the waveform}\label{sec:design-denoise}
+
+A crowdsourced recording carries whatever noise the contributor's room and microphone
+supplied. Wavelet shrinkage is an established way to suppress such noise while preserving
+transients~\cite{donoho1994}, which matters here because a cough is a transient and a
+method that smooths it away would destroy the thing being detected.
+
+The waveform $x$ is decomposed to level $J = 6$ with the \texttt{sym4} wavelet using the
+discrete wavelet transform, computed by the pyramidal algorithm of
+Mallat~\cite{mallat1989}. This yields detail coefficients $d_{j,k}$ at scales
+$j = 1, \dots, J$ and a residual approximation. Shrinkage is applied to the detail
+coefficients only, and the signal is reconstructed from the shrunk coefficients.
+
+Which shrinkage rule is used is not a detail that can be left implicit, because the
+reported effect of denoising depends on it entirely. Three rules appear in this work and
+they are distinguished throughout. The universal threshold of Donoho and
+Johnstone~\cite{donoho1994}, applied with soft thresholding, sets one threshold for the
+whole decomposition from an estimate $\hat{\sigma}$ of the noise level:
+\begin{equation}
+\lambda_{\mathrm{uni}} = \hat{\sigma}\sqrt{2\ln n},
+\qquad
+\eta_{\mathrm{soft}}(d) = \operatorname{sgn}(d)\,\max(|d| - \lambda, 0),
+\label{eq:visu}
+\end{equation}
+where $n$ is the number of samples and $\hat{\sigma}$ is taken from the median absolute
+deviation of the finest scale coefficients. The level adaptive rule of Chang, Yu and
+Vetterli~\cite{chang2000} instead sets a threshold per scale from the ratio of the noise
+variance to the estimated signal variance $\hat{\sigma}_{x,j}^{2}$ at that scale:
+\begin{equation}
+\lambda_{\mathrm{bayes},j} = \frac{\hat{\sigma}^{2}}{\hat{\sigma}_{x,j}},
+\qquad
+\hat{\sigma}_{x,j}^{2} = \max\!\left(\widehat{\operatorname{var}}(d_{j,\cdot})
+  - \hat{\sigma}^{2},\, 0\right).
+\label{eq:bayes}
+\end{equation}
+The third rule is the empirical Bayes procedure of Johnstone and
+Silverman~\cite{johnstone2005}, which places a mixture prior on each coefficient,
+\begin{equation}
+d_{j,k} \sim (1 - w_j)\,\delta_0 + w_j\,\gamma,
+\label{eq:eb}
+\end{equation}
+with $\delta_0$ a point mass at zero, $\gamma$ a heavy tailed density, and the mixing
+weight $w_j$ estimated from the coefficients at that scale by marginal maximum
+likelihood. The coefficient is then replaced by the median of its posterior.
+
+This matters for interpreting the work being extended. Its implementation calls a
+denoising routine without naming a rule, and the default of that routine is the empirical
+Bayes procedure of Equation~\ref{eq:eb} with a Cauchy prior and the posterior median,
+not the soft thresholding of Equation~\ref{eq:visu}. The denoising reported here
+implements Equations~\ref{eq:visu} and~\ref{eq:bayes} directly and states which is in
+use. It is therefore a replication under a specified denoiser rather than a reproduction
+of that routine, and it is not expected to agree with it coefficient by coefficient. The
+alternative, reporting a result under a rule that was never named, is what makes a
+denoising comparison impossible to check.
+
+Figure~\ref{fig:denoise} shows what the shrinkage removes, for one cough and one
+non-cough recording. The panels showing the removed component are each normalised
+independently, so they show where in time and frequency the shrinkage acted and not how
+much energy it took: the magnitudes of two such panels are not comparable with one
+another.
+
+\subsection{Spectrogram formation and the frequency axis}\label{sec:design-spectro}
+
+Each waveform is resampled to $16$~kHz and a short time Fourier transform is taken with a
+$512$ point window and a hop of $256$ samples, giving $257$ frequency bins. Magnitudes
+are converted to decibels. Two conditions differ only in what happens next, and this is
+the second variable of the study.
+
+In the linear condition the $257$ bins are used as they are. In the mel condition they are
+mapped onto $128$ bands spaced on the mel scale of Stevens, Volkmann and
+Newman~\cite{stevens1937}, which spaces bands according to perceived rather than physical
+pitch and so allocates more resolution to low frequencies:
+\begin{equation}
+m(f) = 2595 \log_{10}\!\left(1 + \frac{f}{700}\right).
+\label{eq:mel}
+\end{equation}
+The filterbank is triangular and follows the formulation used in hidden Markov model
+toolkits. One property of it is worth stating because it bears on how much the mel
+condition can differ from the linear one: at this configuration $128$ bands are requested
+over $257$ bins, and one of the $128$ triangular filters contains no bin centre at all and
+is therefore empty. The mel axis here is oversampled relative to the resolution the
+transform provides, so the two conditions differ less in information content than the
+change of axis suggests.
+
+Both conditions produce a single channel image, which is resized to $224 \times 224$ and
+replicated across three channels so that networks pretrained on photographs can accept
+it. The conversion from decibels to pixel values is per recording, which means absolute
+loudness is discarded and only the pattern within a recording survives.
+
+\subsection{Networks}\label{sec:design-nets}
+
+Four networks are used, chosen so that capacity and initialisation vary while the input
+does not. Three are pretrained on ImageNet~\cite{russakovsky2015} and have their final
+classification layer replaced by a two way layer: ResNet18~\cite{he2016}, which supplies
+residual connections at modest depth, MobileNetV2~\cite{sandler2018}, which uses inverted
+residuals and depthwise convolutions and is an order of magnitude smaller in multiply
+accumulate operations, and DenseNet201~\cite{huang2017}, which is far deeper and
+concatenates features across layers. The fourth is a compact network trained from random
+initialisation, consisting of three blocks of convolution, batch normalisation,
+rectification and max pooling, followed by a fully connected layer with dropout.
+
+The fourth network exists to separate two things the work being extended could not. Its
+baseline differed from its denoised condition in architecture, in pretraining, in the
+frequency axis, and in the sample rate at once, so no single cause could be assigned to
+the gap between them. Here the from scratch network sees exactly the images the
+pretrained networks see, so the contribution of pretraining is isolated from the
+contribution of the input.
+
+All four are trained with Adam~\cite{kingma2015} in PyTorch~\cite{paszke2019}. The batch
+size is the only hyperparameter that varies by network, and it varies for a hardware
+reason rather than a modelling one: DenseNet201 activations at this input size do not fit
+alongside the resident images in the available memory at a larger batch.

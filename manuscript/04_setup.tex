@@ -1,0 +1,185 @@
+\section{Experimental setup}\label{sec:setup}
+
+This section states what was run and how it is judged, in five parts:
+Section~\ref{sec:setup-corpora} describes the three corpora and the label regime each
+one represents, Section~\ref{sec:setup-split} the partitioning and why it is built around
+participants rather than recordings, Section~\ref{sec:setup-train} the training protocol,
+Section~\ref{sec:setup-metrics} the metrics and the statistical procedure, and
+Section~\ref{sec:setup-repro} what one run consists of end to end together with the size
+of the grid.
+
+\subsection{Corpora and label provenance}\label{sec:setup-corpora}
+
+A cough label can be obtained in at least three ways, and the three are treated here as
+separate conditions rather than as interchangeable sources of ground truth. Table
+\ref{tab:corpora} sets out the three corpora, what the positive and negative classes
+consist of in each, and how the label was arrived at. The distinction is the organising
+idea of the study, so it is worth stating plainly what each regime does and does not
+establish.
+
+\textbf{Prompt derived labels.} Coswara~\cite{coswara2020} records each participant
+performing a sequence of prescribed vocal tasks. A recording is labelled cough because
+the participant was asked to cough into the microphone, not because anyone listened to
+it. The positive class is the two cough tasks, heavy and shallow, and the negative class
+is the breathing, sustained vowel and counting tasks. Two properties make this the corpus
+the main experiments run on. It carries a participant identifier, which makes a speaker
+disjoint partition possible, and both classes come from the same participant, device and
+recording session, so a difference between the classes cannot be explained by channel or
+speaker.
+
+\textbf{Human annotated labels.} FSD50K~\cite{fsd50k2022} consists of material annotated
+by people against the AudioSet ontology~\cite{gemmeke2017}, and its evaluation split was
+exhaustively verified by the corpus authors. Only that split is used, and it is never
+trained on. Its value here is twofold: the label means a human judged a cough to be
+present, and the ontology provides negatives that are deliberately confusable, since
+breathing, sneezing, gasping, sighing and laughter are separate classes that can be
+selected for rather than left to chance. A detector that only separates coughing from
+silence is not worth reporting, and this is the set that tests whether more than that has
+been achieved.
+
+\textbf{Classifier derived labels.} COUGHVID~\cite{coughvid2021} ships a
+\texttt{cough\_detected} score produced by the corpus authors' own detector, and provides
+no human cough or non-cough judgement for the corpus as a whole. A model trained and
+tested on labels thresholded from that score is measured on its agreement with that
+detector, not on whether a cough is present. This is reported as a property of the
+regime rather than worked around, because it is the regime a large part of the published
+literature on this corpus operates in.
+
+Two further facts about COUGHVID are recorded here because they constrain what can be
+concluded from it. The recordings carry anonymous identifiers and no participant field,
+so a speaker disjoint partition cannot be constructed and any contributor who submitted
+more than once may appear on both sides of a split. And the selection used by the work
+being extended cannot be reproduced from the corpus as published. That work reports
+$15{,}619$ cough and $7{,}261$ non-cough recordings, $22{,}880$ retained of $34{,}434$.
+The lower figure is reproducible: a threshold of $0.1272$ on \texttt{cough\_detected}
+yields exactly $7{,}261$. The upper figure is not reproducible by any threshold on that
+column, because six recordings carry the value $0.8961$ exactly, so the count at or above
+a threshold near there steps from $15{,}617$ directly to $15{,}623$ and $15{,}619$ lies
+strictly between the two. Something further was applied that the original does not
+record. Rather than tune a near miss, this work uses round thresholds and states them:
+a score of $0.9$ or above is taken as cough and $0.1$ or below as non-cough, with the
+interval between them discarded, which retains $22{,}003$ of $34{,}434$ recordings.
+
+Because the two corpora differ sharply in class prior, the COUGHVID arm is subsampled to
+the prior of the Coswara arm, keeping every non-cough recording and sampling the cough
+class down. Without this the two regimes would differ in task difficulty as well as in
+label provenance, and the comparison would not isolate what it is meant to isolate.
+
+\subsection{Partitioning}\label{sec:setup-split}
+
+The Coswara partition is built over participants, not recordings. Participants are
+assigned to the training, validation and test partitions in the proportions $70$, $15$ and
+$15$ per cent, stratified by reported status and by the number of cough recordings
+contributed, under a fixed seed. Every recording from a participant follows that
+participant, and the builder asserts that the three participant sets are pairwise
+disjoint before it writes the manifest, so the property is enforced rather than intended.
+One manifest serves all four conditions, so the conditions are compared on identical
+partitions.
+
+This is not a refinement. A partition made over recordings allows one contributor to
+appear in both training and test material, which makes part of the test set a memory
+test. The scale of the effect has been measured before: a mel spectrogram convolutional
+network reported $98.18$ per cent accuracy under a random split and $95.18$ per cent when
+test coughs came from recordings unseen in training~\cite{zhou2021}, a gap of roughly
+three points which that work reported without discussing. Evidence from respiratory audio
+more broadly points the same way. Audio classifiers that appeared accurate on
+crowdsourced material fell from $0.846$ to $0.619$ area under the curve once confounders
+including self-reported symptoms were matched~\cite{coppock2024}, and a careful evaluation
+of the same kind of data reached $0.71$ where a less careful one reached
+$0.90$~\cite{han2022}. A recent cross-dataset study of cough models found that their
+learned representations cluster by recording device and corpus rather than by the
+condition being detected~\cite{zhang2026}, which is the mechanism these gaps would be
+expected to arise from. Two of its authors are also authors of
+COUGHVID~\cite{coughvid2021}.
+
+For COUGHVID the partition is over recordings, for the reason given in
+Section~\ref{sec:setup-corpora}, and that limitation attaches to every number reported
+for that arm. FSD50K is used only for evaluation, so it is not partitioned at all.
+
+\subsection{Training protocol}\label{sec:setup-train}
+
+One protocol is applied identically to every run. Each network is trained with
+Adam~\cite{kingma2015} at a learning rate of $10^{-4}$ for at most eight epochs, with
+gradients clipped to unit norm. Training stops early when validation balanced accuracy
+has failed to improve for three consecutive epochs. The weights retained are those from
+the epoch with the best validation balanced accuracy, selected without any reference to
+the test partition, and the test partition is read exactly once per run, after selection.
+Computation is in single precision. Table~\ref{tab:training} gives the full settings.
+
+Two of these choices are consequences of observed failures rather than preferences.
+Gradient clipping is present because an unclipped run at the learning rate inherited from
+the work being extended diverges to a non-finite loss on this hardware. Single precision
+is used because mixed precision produced a non-finite loss from the first optimiser step:
+at the gradient scaler's initial scale the gradients of the first convolution overflow
+the half precision range, and clipping then divides by an infinite norm and writes
+non-finite values into the gradients after the scaler's own overflow check has already
+run. The network never leaves the majority class, and the resulting accuracy equals the
+majority class frequency exactly. The trainer counts and reports any optimiser step it
+has to abandon for a non-finite gradient norm, so this mode of failure cannot pass for a
+successful run.
+
+\subsection{Metrics and statistical procedure}\label{sec:setup-metrics}
+
+Accuracy alone is not adequate on these class priors, so balanced accuracy, specificity
+and the Matthews correlation coefficient~\cite{matthews1975} are reported alongside it.
+The correlation coefficient is included because it responds to all four cells of the
+confusion matrix in proportion to both class sizes, which accuracy and the harmonic mean
+of precision and recall do not~\cite{chicco2020}. Interval estimates use the Wilson score
+interval~\cite{wilson1927} rather than the Wald interval, whose coverage is erratic at
+proportions near one~\cite{brown2001}, which is the region every condition here occupies.
+
+Differences between conditions are tested on paired decisions, not on accuracies. For a
+pair of conditions evaluated on the same test recordings under the same seed, the
+quantities of interest are the counts of recordings that one condition classifies
+correctly and the other does not, and these are assessed with McNemar's
+test~\cite{mcnemar1947}, exactly while the discordant total is small enough to enumerate
+and by the continuity corrected approximation otherwise. Of five tests compared for this
+purpose, McNemar's was the only one with an acceptable Type I error rate for a learner
+that is trained once~\cite{dietterich1998}. Because a family of such comparisons is made,
+the p values are adjusted by the step down procedure of Holm~\cite{holm1979}.
+
+One further quantity is reported beside every effect, and it governs how the effects
+should be read. Each condition is run under five seeds, and the spread of accuracy across
+those seeds is reported. An effect smaller than roughly twice that spread cannot be
+claimed from single runs, however large the test set is. This is stated because
+differences well under one accuracy point are routinely reported in this area without any
+estimate of run to run variation, and the present work is in a position to say what that
+variation is.
+
+\subsection{Reproducibility}\label{sec:setup-repro}
+
+A single run consists of the following, end to end. The images for one condition are
+loaded for all three partitions and held in device memory as unsigned bytes, converted to
+normalised single precision per batch. One architecture is trained from one seed under
+the protocol of Section~\ref{sec:setup-train}. The epoch with the best validation
+balanced accuracy is restored, the test partition is evaluated once, and one row per test
+recording is written out carrying the file identifier, the true label, the predicted
+label and both class scores. Those rows, not any summary of them, are what the analysis
+reads, which is what makes the paired tests of Section~\ref{sec:setup-metrics} possible
+at all.
+
+The grid over the prompt derived corpus is $66$ runs. ResNet18, MobileNetV2 and the
+compact network are each run on all four conditions under five seeds, which is $60$ runs,
+and DenseNet201 is run on the two mel conditions under three seeds, which is a further
+six; its batch size constraint makes it several times more expensive per run than the
+others. The four conditions are the two frequency axes crossed with denoising applied or
+withheld.
+
+Three secondary experiments are reported, each settling one question.
+\begin{enumerate}
+\item Whether the accuracy obtained on prompted recordings survives a change of corpus,
+      annotator and negative class. Settled by evaluating the retained networks on the
+      human annotated evaluation split without retraining, in
+      Section~\ref{sec:res-external}.
+\item Whether the label regime changes the answer about denoising. Settled by repeating
+      the ResNet18 block on the classifier derived corpus at a matched class prior, in
+      Section~\ref{sec:res-regime}.
+\item Whether the expert annotated subset of the classifier derived corpus can be used to
+      estimate its label error rate. Settled in the negative, in
+      Section~\ref{sec:res-regime}, because that subset is not a random sample of the
+      corpus.
+\end{enumerate}
+
+Every count in this section and in Section~\ref{sec:results} is derived from the saved
+decision files by script rather than by arithmetic on the page, and the scripts that do
+so are released with the code.
