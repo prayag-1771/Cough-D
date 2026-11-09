@@ -3,9 +3,10 @@
 The results above are specific to three corpora and one pipeline, but the way they fail
 generalises, and the practices that would have exposed the failure earlier are neither
 expensive nor novel. This section sets out what follows for anyone building or reviewing
-a detector of this kind. Section~\ref{sec:disc-protocol} concerns the evaluation protocol
-and Section~\ref{sec:disc-corpora} concerns what the corpora themselves would need to
-contain.
+a detector of this kind. Section~\ref{sec:disc-protocol} concerns the evaluation protocol,
+Section~\ref{sec:disc-regime} concerns what a reported figure means once its label regime
+is known, and Section~\ref{sec:disc-corpora} concerns what the corpora themselves would
+need to contain.
 
 \subsection{What an adequate protocol costs}\label{sec:disc-protocol}
 
@@ -52,6 +53,41 @@ are not speaker recognition in disguise. That was not sufficient to make them tr
 which is the point of this paper, but it was necessary in order to interpret them at all.
 A corpus that does not publish a participant identifier cannot support this, and
 Section~\ref{sec:res-regime} describes one that does not.
+
+\subsection{What a figure means once its regime is known}\label{sec:disc-regime}
+
+The three label regimes were evaluated with one pipeline, one architecture and one input
+condition held fixed across them, which makes the three resulting figures comparable in a
+way that figures drawn from three papers are not. A ResNet18 on linear spectrograms
+reaches $98.60 \pm 0.22$ per cent balanced accuracy over held out speakers whose labels
+came from what they were asked to do, $98.41 \pm 0.24$ where the labels came from another
+classifier's score, and $70.18 \pm 0.44$ where they came from a human listening to the
+recording. All three would be reported as cough detection accuracy. The first two are
+indistinguishable at the precision anyone reports, and the third sits almost thirty points
+below either.
+
+Set against that, the effect of every modelling choice measured here is small. On linear
+spectrograms the widest gap between architectures separates the four layer network's
+$95.33 \pm 0.57$ from the same ResNet18's $98.60$, which is about three points; the widest
+effect of the frequency axis, holding the architecture fixed, is under half a point; and
+wavelet shrinkage, the intervention the original work credited with its improvement,
+improves none of the six paired comparisons made across the two trainable corpora, the
+three in which it has a detectable effect at all being losses. The provenance of the label
+therefore dominates the design of the model by roughly an order of magnitude. A
+practitioner choosing where to spend effort
+should read that ordering literally: a better architecture applied to prompt derived
+labels will not recover what the labels themselves give away.
+
+This has a consequence for reading the literature that is worth stating bluntly. Reported
+accuracies for this task are not on a common scale, and the quantity that moves them most
+is the one least often named. Two figures are only comparable when both corpora obtained
+their labels the same way, both splits were built on the same kind of identifier, and both
+priors match; absent any of those, the difference between two published numbers carries no
+information about the two detectors. The remedy is cheap and entirely within an author's
+control. Name the regime beside the number, say which identifier the split was built on,
+and report one corpus whose labels were produced by a different process from the training
+corpus. The third of those is the only one that costs anything, and
+Section~\ref{sec:disc-protocol} has already put a figure on what it costs.
 
 \subsection{What the corpora would need to contain}\label{sec:disc-corpora}
 
