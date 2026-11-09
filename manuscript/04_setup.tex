@@ -17,6 +17,29 @@ consist of in each, and how the label was arrived at. The distinction is the org
 idea of the study, so it is worth stating plainly what each regime does and does not
 establish.
 
+\begin{table}[htbp]
+\caption{The three corpora, the way the cough label was arrived at in each, and what the
+two classes consist of. Every count is taken from the partition manifest the ingest
+scripts write, not from the figures quoted by the corpus authors. The priors are matched
+by construction so that a change in performance across regimes cannot be attributed to a
+change in class balance.}\label{tab:corpora}
+\small
+\begin{tabular}{@{}lp{20mm}p{26mm}p{30mm}rrc@{}}
+\toprule
+Corpus & Label from & Positive class & Negative class & Recs. & Prior & Spk.\ ids \
+\midrule
+Coswara & a prompt & the two cough tasks, heavy and shallow & breathing, sustained vowel
+  and counting tasks & $13{,}314$ & $0.2228$ & yes \
+\addlinespace
+FSD50K eval & a person & the \textsf{Cough} label & breathing, sneeze, gasp, sigh,
+  laughter, speech & $476$ & $0.2227$ & no \
+\addlinespace
+COUGHVID v3 & a detector & \texttt{cough\_detected} $\geq 0.9$ &
+  \texttt{cough\_detected} $\leq 0.1$ & $8{,}398$ & $0.2239$ & no \
+\botrule
+\end{tabular}
+\end{table}
+
 \textbf{Prompt derived labels.} Coswara~\cite{coswara2020} records each participant
 performing a sequence of prescribed vocal tasks. A recording is labelled cough because
 the participant was asked to cough into the microphone, not because anyone listened to
@@ -35,7 +58,11 @@ present, and the ontology provides negatives that are deliberately confusable, s
 breathing, sneezing, gasping, sighing and laughter are separate classes that can be
 selected for rather than left to chance. A detector that only separates coughing from
 silence is not worth reporting, and this is the set that tests whether more than that has
-been achieved.
+been achieved. Other collections of human annotated vocal sounds exist and carry cough
+among their classes~\cite{vocalsound2022}; this split was preferred because its labels
+were exhaustively verified by the corpus authors rather than sampled for verification, and
+because the released audio of the alternative could not be retrieved from its distribution
+point at the time of writing.
 
 \textbf{Classifier derived labels.} COUGHVID~\cite{coughvid2021} ships a
 \texttt{cough\_detected} score produced by the corpus authors' own detector, and provides
@@ -106,7 +133,7 @@ the epoch with the best validation balanced accuracy, selected without any refer
 the test partition, and the test partition is read exactly once per run, after selection.
 Computation is in single precision. Table~\ref{tab:training} gives the full settings.
 
-Two of these choices are consequences of observed failures rather than preferences.
+Three of these choices are consequences of observed failures rather than preferences.
 Gradient clipping is present because an unclipped run at the learning rate inherited from
 the work being extended diverges to a non-finite loss on this hardware. Single precision
 is used because mixed precision produced a non-finite loss from the first optimiser step:
@@ -117,6 +144,79 @@ run. The network never leaves the majority class, and the resulting accuracy equ
 majority class frequency exactly. The trainer counts and reports any optimiser step it
 has to abandon for a non-finite gradient norm, so this mode of failure cannot pass for a
 successful run.
+
+A third choice follows from a measurement rather than a preference, and it concerns the
+batch size, which is set per architecture. The driver on the development hardware does
+not refuse an allocation that exceeds the four gigabytes of device memory. It satisfies
+the excess from host memory instead, and the traffic then crosses the system bus on every
+access. Nothing fails, no warning is issued, and the only symptom is throughput.
+MobileNetV2 at a batch of $64$ reserves $5450$ MiB and trains at $23$ images per second,
+while the same network at $16$ reserves $2228$ MiB and trains at $148$, a factor of
+$6.4$ for a quantity that appears in no diagnostic. DenseNet201 shows the same effect
+more sharply, $1.6$ images per second at a batch of $32$ against $29.8$ at $8$. Inverted
+residuals and dense concatenation are what make these two the binding cases, since both
+keep high resolution feature maps alive across many layers, so the activation memory of
+each is far larger than its operation count would suggest. The competing explanation,
+that the depthwise separable convolutions were reaching a slow kernel, was tested by
+repeating every measurement in the channels last memory layout and is rejected: that
+layout leaves the peak essentially unchanged and runs an order of magnitude slower again,
+and a remedy that raises throughput without lowering the peak was not addressing a memory
+problem. The batch for each architecture is therefore set to leave roughly a gigabyte of
+the card unused rather than to the largest value that happens to fit, because the
+quantity being protected is a peak and the rest of the machine is in use.
+Table~\ref{tab:throughput} gives the measurements the choice rests on.
+
+\begin{table}[htbp]
+\caption{Training protocol. One protocol is applied identically to every run. The batch
+size is the only setting that varies with architecture, for the reason given in the
+text.}\label{tab:training}
+\small
+\begin{tabular}{@{}lp{62mm}@{}}
+\toprule
+Setting & Value \
+\midrule
+Optimiser & Adam, learning rate $10^{-4}$ \
+Gradient clipping & unit norm \
+Epochs & at most $8$ \
+Early stopping & no gain in validation balanced accuracy for $3$ epochs \
+Weights retained & those of the best validation balanced accuracy epoch \
+Test reads per run & one, after selection \
+Precision & single \
+Input & $224 \times 224$, normalised by ImageNet channel statistics \
+Batch size & $64$ ResNet18, $16$ MobileNetV2, $128$ compact, $8$ DenseNet201 \
+Seeds & five, and three for DenseNet201 \
+\botrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Training throughput and peak reserved device memory, measured per architecture
+on the card used throughout. The card holds $4096$ MiB. A peak above that figure is not
+an error on this platform: the excess is served from host memory, and the collapse in
+throughput is the only indication. The channels last rows show that the layout does not
+address the cause.}\label{tab:throughput}
+\small
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Architecture & Layout & Batch & Images/s & Peak MiB \
+\midrule
+ResNet18 & contiguous & $64$ & $208.1$ & $2898$ \
+\addlinespace
+MobileNetV2 & contiguous & $64$ & $23.2$ & $5450$ \
+MobileNetV2 & contiguous & $32$ & $148.4$ & $3222$ \
+MobileNetV2 & contiguous & $16$ & $147.6$ & $2228$ \
+MobileNetV2 & channels last & $32$ & $13.2$ & $3254$ \
+MobileNetV2 & channels last & $16$ & $14.8$ & $2238$ \
+\addlinespace
+Compact & contiguous & $128$ & $967.1$ & $3098$ \
+Compact & contiguous & $64$ & $912.6$ & $1608$ \
+\addlinespace
+DenseNet201 & contiguous & $32$ & $1.6$ & $7372$ \
+DenseNet201 & contiguous & $12$ & $33.6$ & $3070$ \
+DenseNet201 & contiguous & $8$ & $29.8$ & $2284$ \
+\botrule
+\end{tabular}
+\end{table}
 
 \subsection{Metrics and statistical procedure}\label{sec:setup-metrics}
 

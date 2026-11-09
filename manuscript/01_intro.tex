@@ -1,0 +1,111 @@
+\section{Introduction}\label{sec:intro}
+
+Coughing is among the few sounds the body produces that carries diagnostic information and
+can be recorded without instrumentation, a clinician or a visit. That combination is what
+has made automatic cough analysis attractive: a microphone is already in every pocket, and
+a cough is loud, brief and distinctive. Almost every application proposed for it, from
+monitoring the progression of a chronic respiratory condition to triaging an infectious
+one, rests on a step that is rarely the subject of the paper that uses it. Before anything
+can be inferred from a cough, the cough has to be found. Detection is the foundation, and
+the quality of that foundation sets a ceiling on everything built above it.
+
+The reported accuracy of that foundational step is, on its face, settled. Work on cough
+and respiratory audio routinely reports accuracies in the high nineties, on architectures
+ranging from purpose built convolutional networks to transfer learning from image
+classification~\cite{imran2020, laguarta2020, pahar2021}. A reader encountering these
+figures would reasonably conclude that cough detection is solved and that attention
+belongs further downstream.
+
+A sequence of independent audits has since established that this conclusion does not
+follow from the evidence offered for it. Reviews of machine learning applied to
+respiratory audio during the pandemic found that the overwhelming majority of published
+models carried a high risk of bias and that almost none were validated on data from a
+source other than the one they were developed on~\cite{roberts2021}. More specifically,
+models that appeared to detect disease were shown to be reading confounds instead: the
+recording device, the collection site, the prompt a participant was reading, or simply the
+identity of the speaker, any of which can separate the classes when the classes were not
+collected under matched conditions~\cite{han2022, coppock2024}. Where an external test set
+was eventually applied, performance fell to near chance~\cite{xia2021, zhou2021}. The
+pattern across these audits is consistent, and it is not that the models were badly
+trained. It is that the evaluations measured something other than what they were taken to
+measure.
+
+This leaves a specific and answerable question, and it is the one this work addresses. The
+audits identified that single corpus evaluation inflates performance, but they did not
+isolate which part of the evaluation is responsible, because in the studies they examined
+several candidate causes vary together. Three in particular are routinely conflated. The
+first is the provenance of the label: a recording may be called a cough because a
+participant was told to cough, because a person listened and judged that a cough was
+present, or because another classifier assigned it a score above a threshold. These are
+treated throughout the literature as interchangeable sources of ground truth, and they are
+not equivalent claims. The second is the composition of the negative class. Separating
+coughing from a sustained vowel is a different problem from separating it from breathing,
+sneezing, gasping and laughter, and a corpus whose negatives happen to be easy will
+reward a detector that has learned very little. The third is run to run variation.
+Differences well under one accuracy point are reported as findings in this area without
+any estimate of the spread across random seeds, which is the quantity that determines
+whether such a difference can be claimed at all.
+
+The present work holds the architecture, the preprocessing and the training protocol fixed
+and varies these three factors deliberately. Three corpora are used, chosen so that each
+represents one label regime: prompt derived labels from Coswara~\cite{coswara2020}, human
+annotated labels from the exhaustively verified evaluation split of
+FSD50K~\cite{fsd50k2022}, and classifier derived labels from the \texttt{cough\_detected}
+score shipped with COUGHVID~\cite{coughvid2021}. The class prior is matched across all
+three by construction, so a change in performance between regimes cannot be attributed to
+a change in class balance. Partitions over the prompt derived corpus are built over
+participants rather than recordings, so no speaker appears on both sides of a split.
+Every condition is run under five random seeds, and every comparison is tested on paired
+per recording decisions rather than on summary accuracies.
+
+The specific contributions are the following.
+
+\begin{itemize}
+\item A controlled comparison of the three label regimes under one fixed pipeline, in
+      which label provenance is the variable and class prior, preprocessing, architecture
+      and training protocol are held constant. This isolates a factor that the existing
+      audits identified but did not separate from the others varying alongside it.
+
+\item A quantification of how far single corpus accuracy overstates detection. Under an
+      identical input condition, ResNet18 reaches $98.6$ per cent balanced accuracy on
+      held out speakers from the prompted corpus and $70.2$ per cent on the human
+      annotated split, and the fall is asymmetric in a way that a single accuracy figure
+      conceals: specificity declines from $99.5$ to $84.3$ per cent while sensitivity
+      collapses from $97.7$ to $56.0$. A detector that appears to be near perfect misses
+      close to half of all coughs once the negatives are confusable and the labels come
+      from a person.
+
+\item An assessment of wavelet shrinkage as a preprocessing step under a protocol able to
+      detect an effect of the size being claimed for it. Measured against the spread across
+      seeds, the gain does not survive: the largest improvement observed is $1.30$
+      accuracy points with a seed to seed spread of $1.36$ points about it.
+
+\item A reproducibility finding about the classifier derived corpus. The recording
+      selection used by the work this study extends cannot be reproduced from the corpus as
+      published, for an arithmetic reason that is demonstrated rather than asserted, and
+      the expert annotated subset cannot be used to estimate the corpus label error rate
+      because it is not a random sample of the corpus.
+
+\item A statement of the computational conditions in enough detail to be acted upon,
+      including a measured account of a failure mode that produces no error and no warning
+      and costs a factor of $6.4$ in training throughput, together with the measurement
+      that distinguishes its cause from the plausible alternative.
+\end{itemize}
+
+Nothing in what follows should be read as a claim that cough detection is unachievable, or
+that the architectures examined here are inadequate to it. The networks fit the prompted
+corpus almost perfectly, and they do so from a speaker disjoint partition, which rules out
+the simplest explanation for a high score. The claim is narrower and, for anyone intending
+to build on such a result, more consequential: the number obtained that way does not
+transfer, the direction in which it fails is predictable, and the experiment needed to
+discover this costs far less than the experiment that assumes otherwise.
+
+The remainder of the paper is organised as follows.
+Section~\ref{sec:related} reviews classifiers built on cough audio, what has since been
+established about how they were evaluated, and the evidence offered for denoising as a
+preprocessing step. Section~\ref{sec:design} sets out the pipeline, taking the wavelet
+shrinkage, the spectrogram and the networks in the order the signal meets them.
+Section~\ref{sec:setup} describes the corpora and their label regimes, the partitioning,
+the training protocol and the statistical procedure. Section~\ref{sec:results} reports the
+grid, the external evaluation and the comparison across regimes.
+Section~\ref{sec:conclusion} states what the results support and what they do not.
