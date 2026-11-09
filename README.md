@@ -76,6 +76,7 @@ than sampled for verification.
     python -I code/threshold.py       # discrimination against calibration
     python -I code/error_analysis.py  # what the false positives actually are
     python -I code/figures.py         # both figures, and the shrinkage audit
+    python -I code/trace_numbers.py   # every quoted number back to a file
     python -I assemble.py --check     # one .tex, then the structural checks
 
 `assemble.py` writes `manuscript/paper.tex`, which is the single file the publisher asks

@@ -1,0 +1,4 @@
+corpus,recordings,cough,prior,participants,train,train_cough,val,val_cough,test,test_cough
+coswara,13314,2967,0.2228,1495,9301,2074,1998,445,2015,448
+coughvid,8398,1880,0.2239,1,5879,1316,1260,282,1259,282
+fsd50k,476,106,0.2227,1,0,0,0,0,476,106

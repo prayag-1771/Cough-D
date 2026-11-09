@@ -157,14 +157,25 @@ def audit_shrinkage(work, n=200):
         w.writeheader()
         w.writerows(rows)
     print('  wrote %s  (%d recordings)' % (shortpath(out), len(rows)))
-    for rule in ('visu', 'bayes'):
-        v = sorted(seen[rule])
-        if not v:
-            continue
-        print('    %-6s removed power fraction: median %.3e, quartiles %.3e '
-              'and %.3e, max %.3e'
-              % (rule, v[len(v) // 2], v[len(v) // 4], v[3 * len(v) // 4],
-                 v[-1]))
+
+    # The manuscript quotes the summary, not the per recording column, so the
+    # summary is written down too rather than left in a console log.
+    summary = os.path.join(ROOT, 'results', 'shrinkage_summary.csv')
+    with open(summary, 'w', newline='', encoding='utf-8') as fh:
+        w = csv.writer(fh)
+        w.writerow(['rule', 'recordings', 'median_pct', 'q1_pct', 'q3_pct',
+                    'max_pct'])
+        for rule in ('visu', 'bayes'):
+            v = sorted(seen[rule])
+            if not v:
+                continue
+            q1, med, q3 = v[len(v) // 4], v[len(v) // 2], v[3 * len(v) // 4]
+            w.writerow([rule, len(v), '%.4f' % (100 * med), '%.4f' % (100 * q1),
+                        '%.4f' % (100 * q3), '%.4f' % (100 * v[-1])])
+            print('    %-6s removed power: median %.4f per cent, quartiles '
+                  '%.4f and %.4f, max %.4f'
+                  % (rule, 100 * med, 100 * q1, 100 * q3, 100 * v[-1]))
+    print('  wrote %s' % shortpath(summary))
     return seen
 
 

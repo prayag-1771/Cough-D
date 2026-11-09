@@ -809,7 +809,8 @@ ResNet18 & linear & 5 & $99.09 \pm 0.13$ & $97.72 \pm 0.62$ & $99.48 \pm 0.26$ &
  & mel & 5 & $98.71 \pm 0.20$ & $97.19 \pm 0.81$ & $99.14 \pm 0.10$ & $0.963 \pm 0.006$ \\
  & wav+mel & 5 & $98.65 \pm 0.49$ & $97.37 \pm 0.53$ & $99.02 \pm 0.74$ & $0.961 \pm 0.014$ \\
 \addlinespace
-MobileNetV2 & mel & 3 & $98.66 \pm 0.26$ & $98.44 \pm 0.39$ & $98.72 \pm 0.42$ & $0.962 \pm 0.007$ \\
+MobileNetV2 & mel & 5 & $98.86 \pm 0.33$ & $98.35 \pm 0.34$ & $99.00 \pm 0.49$ & $0.967 \pm 0.009$ \\
+ & wav+mel & 4 & $98.96 \pm 0.24$ & $97.88 \pm 0.39$ & $99.27 \pm 0.32$ & $0.970 \pm 0.007$ \\
 \addlinespace
 Compact & linear & 5 & $96.43 \pm 0.38$ & $93.35 \pm 1.60$ & $97.31 \pm 0.74$ & $0.898 \pm 0.010$ \\
  & mel & 5 & $96.46 \pm 0.34$ & $92.46 \pm 2.24$ & $97.60 \pm 0.83$ & $0.898 \pm 0.009$ \\
@@ -849,8 +850,9 @@ not help, and that where the effect reaches significance it is negative.
 \toprule
 Architecture & Comparison & Seeds & $b$ & $c$ & $p$ & $p$ adj.\ & Accuracy change \\
 \midrule
-ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0111$ & $-0.29 \pm 0.19$ \\
+ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0166$ & $-0.29 \pm 0.19$ \\
 ResNet18 & mel $\rightarrow$ wav+mel & 5 & 71 & 65 & $0.668$ & $0.668$ & $-0.06 \pm 0.39$ \\
+MobileNetV2 & mel $\rightarrow$ wav+mel & 4 & 37 & 51 & $0.165$ & $0.331$ & $+0.17 \pm 0.34$ \\
 Compact & mel $\rightarrow$ wav+mel & 5 & 525 & 133 & $<10^{-4}$ & $<10^{-4}$ & $-3.89 \pm 8.25$ \\
 \botrule
 \end{tabular}
@@ -858,7 +860,7 @@ Compact & mel $\rightarrow$ wav+mel & 5 & 525 & 133 & $<10^{-4}$ & $<10^{-4}$ & 
 
 For ResNet18 on the linear axis, $66$ recordings are classified correctly without
 shrinkage and incorrectly with it, against $37$ in the reverse direction. The test rejects
-at an adjusted $p$ of $0.0111$, and the accuracy change across seeds is
+at an adjusted $p$ of $0.0166$, and the accuracy change across seeds is
 $-0.29 \pm 0.19$ points. The effect is therefore real, small, and in the direction
 opposite to the one claimed for the method. On the mel axis the same comparison is
 indistinguishable from no effect, $71$ against $65$ discordant recordings at an adjusted
