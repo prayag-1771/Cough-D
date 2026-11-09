@@ -203,12 +203,13 @@ Section~\ref{sec:conclusion} states what the results support and what they do no
 
 \section{Related work and its limitations}\label{sec:related}
 
-The literature this work sits in divides into three strands, and the gap it addresses lies
+The literature this work sits in divides into four strands, and the gap it addresses lies
 between them. Section~\ref{sec:rel-class} covers classifiers built on cough and
 respiratory audio, Section~\ref{sec:rel-eval} covers what has since been established
-about how their performance was measured, and Section~\ref{sec:rel-denoise} covers
-denoising as a preprocessing step and states what the present work supplies that none of
-these provide.
+about how their performance was measured, Section~\ref{sec:rel-neg} covers the
+composition of the negative class and what it determines, and
+Section~\ref{sec:rel-denoise} covers denoising as a preprocessing step and states what
+the present work supplies that none of these provide.
 
 \subsection{Classifiers on cough and respiratory audio}\label{sec:rel-class}
 
@@ -278,6 +279,43 @@ label is a thresholded detector score, a model is measured on its agreement with
 detector and not on whether a cough is present, and this distinction is frequently left
 implicit. It cannot be resolved by better modelling, only by stating the regime and, where
 possible, comparing across regimes.
+
+\subsection{The negative class and what it determines}\label{sec:rel-neg}
+
+A detector learns the boundary it is asked to draw, and in a two class problem that
+boundary is fixed as much by what the negatives contain as by what the positives do. This
+is implicit in the corpora rather than discussed in the papers built on them, and it
+deserves stating, because the three corpora used here arrive at their negatives in three
+quite different ways.
+
+A prompted collection obtains its negatives the same way it obtains its positives, by
+asking. Coswara asks participants for breathing, for sustained vowels and for
+counting~\cite{coswara2020}, so the negative class is whatever those tasks produce. This
+has a property worth keeping, in that both classes then come from the same participant,
+the same device and the same session, so a difference between them cannot be an artefact
+of channel or speaker. It also has a property worth noticing: not one of those tasks is a
+forced expiration. Sneezing, throat clearing, burping and gasping share with coughing the
+mechanism that makes it acoustically distinctive, and none of them is present.
+
+A crowdsourced collection takes whatever arrives. The negatives are then as varied as the
+contributors, which is a kind of difficulty, but it is unstructured, and the corpus
+cannot say which confusions it does or does not cover~\cite{xia2021, coughvid2021}. A
+corpus annotated against a general ontology is the only one of the three that can. Because
+the ontology names breathing, sneezing, gasping, sighing and laughter as separate
+classes~\cite{gemmeke2017}, a negative class can be assembled from them deliberately
+rather than accepted as whatever happened to score low on a
+detector~\cite{fsd50k2022, vocalsound2022}.
+
+The consequence for evaluation is that a specificity figure is uninterpretable without a
+description of what the negatives were. Two detectors reporting the same specificity may
+have been tested against entirely different problems, and the one tested against the
+easier negatives will appear equal to the other while being substantially worse at the
+task either is meant to perform. The cross-dataset evaluation noted above is consistent
+with this, in finding that representations cluster by corpus rather than by the condition
+being detected~\cite{zhang2026}. What has not been reported, and what
+Section~\ref{sec:res-external} supplies, is an attribution of the false positives to the
+annotated classes that produced them, which is what identifies the specific confusion a
+training corpus failed to teach.
 
 \subsection{Denoising as a preprocessing step}\label{sec:rel-denoise}
 
@@ -1289,6 +1327,9 @@ Huang, G., Liu, Z., van der Maaten, L., Weinberger, K.Q.: . In:  ()
 \bibitem{zhang2026}
 Zhang, W., Teijeiro, T., Thevenot, J., Atienza, D.:  ()
 
+\bibitem{vocalsound2022}
+Gong, Y., Yu, J., Glass, J.: . In:  ()
+
 \bibitem{donoho1994}
 Donoho, D.L., Johnstone, I.M.: .  ()
 
@@ -1312,9 +1353,6 @@ Kingma, D.P., Ba, J.: . In:  ()
 
 \bibitem{paszke2019}
 Paszke, A., Gross, S., Massa, F. et al.: . In:  ()
-
-\bibitem{vocalsound2022}
-Gong, Y., Yu, J., Glass, J.: . In:  ()
 
 \bibitem{matthews1975}
 Matthews, B.W.: .  ()
