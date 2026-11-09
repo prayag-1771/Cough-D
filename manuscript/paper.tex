@@ -149,7 +149,10 @@ The specific contributions are the following.
       conceals: specificity declines from $99.5$ to $84.3$ per cent while sensitivity
       collapses from $97.7$ to $56.0$. A detector that appears to be near perfect misses
       close to half of all coughs once the negatives are confusable and the labels come
-      from a person.
+      from a person. The loss is shown to lie in discrimination rather than in
+      calibration, which closes off the cheapest remedy: the area under the curve falls
+      from $0.998$ to $0.749$, and moving the decision threshold to the best position for
+      the external set recovers only $1.7$ points.
 
 \item An assessment of wavelet shrinkage as a preprocessing step under a protocol able to
       detect an effect of the size being claimed for it. Measured against the spread across
@@ -870,7 +873,49 @@ presence or absence of shrinkage move the result by far less than the change of 
 does.}\label{fig:transfer}
 \end{figure}
 
-Two further observations follow from the same table. The first is that the ordering of the
+A fall of this size has two possible causes that call for quite different responses, and
+they can be told apart. The networks may have stopped ranking coughs above non-coughs, in
+which case the representation does not transfer and nothing applied after the fact will
+recover it. Or they may still rank them correctly while the decision threshold inherited
+from training now sits in the wrong place, in which case the loss is a calibration problem
+and a practitioner holding a little labelled data from the target domain can fix it
+cheaply. The area under the receiver operating characteristic distinguishes the two,
+because it depends on the ordering of the scores alone and not on where the threshold
+falls. Table~\ref{tab:threshold} reports it.
+
+\begin{table}[htbp]
+\caption{Discrimination against calibration on the external set. The area under the curve depends only on the ordering of the scores, so a value that holds up while balanced accuracy falls indicates that the ranking survived and the inherited threshold did not. The final column is the balanced accuracy attainable at the best threshold for this set. That threshold is chosen on the same recordings it is scored on, so the column is an upper bound on what recalibration could recover and not an operating point anyone could reach in advance.}\label{tab:threshold}
+\small
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+& & \multicolumn{2}{c}{Area under the curve} & \multicolumn{2}{c}{External balanced accuracy} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+Architecture & Input & In corpus & External & At $0.5$ & Best possible \\
+\midrule
+ResNet18 & linear & $0.998 \pm 0.002$ & $0.749 \pm 0.018$ & $70.18 \pm 0.44$ & $71.90 \pm 0.91$ \\
+ & wav+linear & $0.998 \pm 0.001$ & $0.730 \pm 0.007$ & $70.01 \pm 0.81$ & $71.13 \pm 0.52$ \\
+ & mel & $0.999 \pm 0.000$ & $0.768 \pm 0.016$ & $71.15 \pm 1.01$ & $72.34 \pm 1.68$ \\
+ & wav+mel & $0.998 \pm 0.001$ & $0.754 \pm 0.024$ & $71.16 \pm 2.08$ & $72.31 \pm 1.35$ \\
+\addlinespace
+Compact & linear & $0.992 \pm 0.001$ & $0.648 \pm 0.012$ & $60.10 \pm 1.06$ & $62.23 \pm 1.59$ \\
+ & mel & $0.993 \pm 0.000$ & $0.687 \pm 0.017$ & $60.92 \pm 1.01$ & $64.36 \pm 1.58$ \\
+ & wav+mel & $0.985 \pm 0.012$ & $0.651 \pm 0.028$ & $58.37 \pm 5.18$ & $62.10 \pm 2.02$ \\
+\botrule
+\end{tabular}
+\end{table}
+
+The answer is the unwelcome one. For ResNet18 on the linear condition the area under the
+curve falls from $0.998$ within the corpus to $0.749$ outside it. The ordering itself has
+degraded, and the threshold is very nearly where it ought to be: balanced accuracy at the
+inherited threshold is $70.18$ per cent, while the best value attainable at any threshold
+on this set is $71.90$. Recalibration could therefore recover about $1.7$ points, and even
+that figure is optimistic, because the threshold achieving it was chosen on the same
+recordings it is scored on and no procedure could have selected it in advance. The same
+pattern holds for every architecture and condition in the table. The obvious and cheapest
+remedy for a domain shift, collecting a little target data and moving the operating point,
+would recover almost none of what was lost here.
+
+Two further observations follow from the external table. The first is that the ordering of the
 architectures is preserved: the compact network, which was roughly three points behind
 ResNet18 in corpus, is roughly ten points behind it out of corpus, at
 $60.10 \pm 1.06$ on the linear condition. Whatever the larger network learned that the
@@ -961,7 +1006,12 @@ recovers $97.72$ per cent of coughs from held out speakers in a prompted corpus 
 $56.04$ per cent of them from human annotated audio at the same class prior, with no
 retraining between the two measurements, while its specificity falls far less; the
 detector does not stop working so much as stop finding coughs, and a single accuracy
-figure hides which of the two has happened. Wavelet shrinkage does not close the gap, and
+figure hides which of the two has happened. The loss is one of discrimination and not of
+calibration, which matters because it closes off the cheapest response: the area under
+the curve falls from $0.998$ to $0.749$, and the best threshold available on the external
+set recovers only $1.7$ points of balanced accuracy, so collecting a little target data
+and moving the operating point would not retrieve what was lost. Wavelet shrinkage does
+not close the gap either, and
 the reason is measurable rather than conjectural: on recordings of this quality the
 universal threshold removes a median of $0.67$ per cent of signal power, so the two input
 conditions it produces are very nearly the same images and no difference between them was

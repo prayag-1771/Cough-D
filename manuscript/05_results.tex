@@ -99,7 +99,30 @@ presence or absence of shrinkage move the result by far less than the change of 
 does.}\label{fig:transfer}
 \end{figure}
 
-Two further observations follow from the same table. The first is that the ordering of the
+A fall of this size has two possible causes that call for quite different responses, and
+they can be told apart. The networks may have stopped ranking coughs above non-coughs, in
+which case the representation does not transfer and nothing applied after the fact will
+recover it. Or they may still rank them correctly while the decision threshold inherited
+from training now sits in the wrong place, in which case the loss is a calibration problem
+and a practitioner holding a little labelled data from the target domain can fix it
+cheaply. The area under the receiver operating characteristic distinguishes the two,
+because it depends on the ordering of the scores alone and not on where the threshold
+falls. Table~\ref{tab:threshold} reports it.
+
+\input{tab_threshold}
+
+The answer is the unwelcome one. For ResNet18 on the linear condition the area under the
+curve falls from $0.998$ within the corpus to $0.749$ outside it. The ordering itself has
+degraded, and the threshold is very nearly where it ought to be: balanced accuracy at the
+inherited threshold is $70.18$ per cent, while the best value attainable at any threshold
+on this set is $71.90$. Recalibration could therefore recover about $1.7$ points, and even
+that figure is optimistic, because the threshold achieving it was chosen on the same
+recordings it is scored on and no procedure could have selected it in advance. The same
+pattern holds for every architecture and condition in the table. The obvious and cheapest
+remedy for a domain shift, collecting a little target data and moving the operating point,
+would recover almost none of what was lost here.
+
+Two further observations follow from the external table. The first is that the ordering of the
 architectures is preserved: the compact network, which was roughly three points behind
 ResNet18 in corpus, is roughly ten points behind it out of corpus, at
 $60.10 \pm 1.06$ on the linear condition. Whatever the larger network learned that the

@@ -7,7 +7,12 @@ recovers $97.72$ per cent of coughs from held out speakers in a prompted corpus 
 $56.04$ per cent of them from human annotated audio at the same class prior, with no
 retraining between the two measurements, while its specificity falls far less; the
 detector does not stop working so much as stop finding coughs, and a single accuracy
-figure hides which of the two has happened. Wavelet shrinkage does not close the gap, and
+figure hides which of the two has happened. The loss is one of discrimination and not of
+calibration, which matters because it closes off the cheapest response: the area under
+the curve falls from $0.998$ to $0.749$, and the best threshold available on the external
+set recovers only $1.7$ points of balanced accuracy, so collecting a little target data
+and moving the operating point would not retrieve what was lost. Wavelet shrinkage does
+not close the gap either, and
 the reason is measurable rather than conjectural: on recordings of this quality the
 universal threshold removes a median of $0.67$ per cent of signal power, so the two input
 conditions it produces are very nearly the same images and no difference between them was
