@@ -53,11 +53,27 @@ SIZE = 224
 # once and reuse the choice is free speed.
 torch.backends.cudnn.benchmark = True
 
-# Batch sizes that fit 4 GB alongside the resident images. DenseNet201 is the
-# binding case: its activations leave room for nothing larger. 64 was measured
-# against 32 and 96 on this card: 197 images per second against 183 and 191,
-# at a peak of 2.08 GB, which leaves the rest of the card to other work.
-BATCH = {'resnet18': 64, 'mobilenetv2': 64, 'compact': 128, 'densenet201': 12}
+# Batch sizes chosen so that the peak reserved memory stays inside the card,
+# measured per architecture by bench_arch.py and recorded in
+# results/throughput.csv.
+#
+# The driver on this platform does not refuse an allocation that exceeds the
+# four gigabytes of device memory; it satisfies it from host memory instead and
+# the traffic crosses the bus on every access. Nothing fails, so the only
+# symptom is speed. MobileNetV2 at a batch of 64 reserves 5450 MiB and trains
+# at 23 images per second; the same network at 16 reserves 2228 MiB and trains
+# at 148, a factor of 6.4 for a quantity that is invisible in any error
+# message. DenseNet201 shows the same effect more sharply, 1.6 images per
+# second at 32 against 29.8 at 8.
+#
+# Inverted residuals and dense concatenation are what make these two the
+# binding cases: both hold high resolution feature maps alive across many
+# layers, so their activation memory is far larger than their operation count
+# suggests. The batch is set to leave about a gigabyte spare rather than to the
+# largest value that happens to fit, because the figure being protected is a
+# peak and the rest of the machine is in use. A batch of 32 for MobileNetV2
+# measures the same speed as 16 but leaves only 69 MiB, which is not a margin.
+BATCH = {'resnet18': 64, 'mobilenetv2': 16, 'compact': 128, 'densenet201': 8}
 
 
 def be_polite():

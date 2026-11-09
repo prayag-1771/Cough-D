@@ -13,6 +13,10 @@ weights/
 # change of protocol can be re-examined. They are not the results reported.
 runs_old_protocol/
 
+# Runs made at the batch size that overran the card, kept locally only so the
+# measurement can be re-examined. They are not the results reported.
+runs_old_batch64/
+
 # Job output. Transient, and full of absolute paths from this machine.
 logs/
 

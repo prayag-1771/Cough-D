@@ -1,0 +1,12 @@
+arch,batch,layout,images_per_s,peak_mib
+compact,64,contiguous,912.6,1608
+compact,128,contiguous,967.1,3098
+densenet201,8,contiguous,29.8,2284
+densenet201,12,contiguous,33.6,3070
+densenet201,32,contiguous,1.6,7372
+mobilenetv2,16,channels_last,14.8,2238
+mobilenetv2,16,contiguous,147.6,2228
+mobilenetv2,32,channels_last,13.2,3254
+mobilenetv2,32,contiguous,148.4,3222
+mobilenetv2,64,contiguous,23.2,5450
+resnet18,64,contiguous,208.1,2898
