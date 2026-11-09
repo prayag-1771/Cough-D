@@ -78,6 +78,14 @@ The specific contributions are the following.
       from $0.998$ to $0.749$, and moving the decision threshold to the best position for
       the external set recovers only $1.7$ points.
 
+\item An account of what the detectors confuse, obtained from the annotated classes of
+      the external negatives. The false positives are concentrated rather than diffuse,
+      and they fall on the other forced expirations: clips labelled as sneezes are
+      assigned to the cough class in $67.8$ per cent of decisions, a higher rate than the
+      same models achieve on clips that are genuinely coughs. The negative class of the
+      prompted corpus contains no forced expiration, so the distinction was never one the
+      models were required to learn.
+
 \item An assessment of wavelet shrinkage as a preprocessing step under a protocol able to
       detect an effect of the size being claimed for it. Measured against the spread across
       seeds, the gain does not survive: the largest improvement observed is $1.30$
@@ -89,11 +97,13 @@ The specific contributions are the following.
       the expert annotated subset cannot be used to estimate the corpus label error rate
       because it is not a random sample of the corpus.
 
-\item A statement of the computational conditions in enough detail to be acted upon,
-      including a measured account of a failure mode that produces no error and no warning
-      and costs a factor of $6.4$ in training throughput, together with the measurement
-      that distinguishes its cause from the plausible alternative.
 \end{itemize}
+
+The computational conditions are stated in enough detail to be acted upon rather than
+merely reproduced, and Section~\ref{sec:setup-train} records a measured account of one
+failure mode that produces no error and no warning while costing a factor of $6.4$ in
+training throughput, together with the measurement that distinguishes its cause from the
+plausible alternative.
 
 Nothing in what follows should be read as a claim that cough detection is unachievable, or
 that the architectures examined here are inadequate to it. The networks fit the prompted
@@ -111,4 +121,6 @@ shrinkage, the spectrogram and the networks in the order the signal meets them.
 Section~\ref{sec:setup} describes the corpora and their label regimes, the partitioning,
 the training protocol and the statistical procedure. Section~\ref{sec:results} reports the
 grid, the external evaluation and the comparison across regimes.
+Section~\ref{sec:discussion} draws out what follows for how detectors of this kind should
+be evaluated and what the corpora would need to contain.
 Section~\ref{sec:conclusion} states what the results support and what they do not.

@@ -139,6 +139,33 @@ first number is simply the proportion of non-coughs in the external set. The mod
 assigned every one of the $476$ recordings to the majority class, and an evaluation
 reporting accuracy alone would have recorded it as the second best run of that condition.
 
+Because the external negatives are annotated against the ontology, it is possible to ask
+not merely how many false positives there are but what produces them.
+Table~\ref{tab:confusion} gives the rate at which clips carrying each annotated class are
+assigned to the cough class, pooled over every ResNet18 run.
+
+\input{tab_confusion}
+
+The errors are not spread evenly over the negative class, and the concentration is
+severe. Clips labelled \textsf{Sneeze} are called coughs in $67.8$ per cent of decisions.
+That is a higher rate than the detectors achieve on clips that really are coughs, where
+recall over the same runs is $56.6$ per cent. On this evidence a sneeze is more likely to
+be reported as a cough than a cough is. Burping follows at $33.9$ per cent, whispering at
+$26.7$, gasping at $20.5$ and sighing at $20.0$, while breathing sits at $16.5$ and the
+speech classes fall between $7.7$ and $13.6$.
+
+The ordering is interpretable, and it is the one the construction of the prompted corpus
+predicts. The sounds most readily confused with coughing are the other forced
+expirations. A sneeze, a burp, a gasp and a sigh are each a sudden release of air through
+the vocal tract, distinguished from a cough by details a detector has no reason to encode
+if it was never required to. The negative class of the prompted corpus is breathing,
+sustained vowels and counting, and not one of those is a forced expiration. A model
+trained against it is never asked to separate coughing from sneezing, and the external
+evaluation finds that it cannot. This is the mechanism behind the loss of discrimination
+reported above, and it indicates what a corpus intended to support cough detection would
+need to contain: not more recordings, but negatives that are hard in the particular way
+that matters.
+
 \subsection{What the classifier derived corpus can establish}\label{sec:res-regime}
 
 The third regime is reported separately because the quantity it measures is different in

@@ -1,0 +1,89 @@
+\section{Implications for how cough detectors are evaluated}\label{sec:discussion}
+
+The results above are specific to three corpora and one pipeline, but the way they fail
+generalises, and the practices that would have exposed the failure earlier are neither
+expensive nor novel. This section sets out what follows for anyone building or reviewing
+a detector of this kind. Section~\ref{sec:disc-protocol} concerns the evaluation protocol
+and Section~\ref{sec:disc-corpora} concerns what the corpora themselves would need to
+contain.
+
+\subsection{What an adequate protocol costs}\label{sec:disc-protocol}
+
+The external evaluation reported here consumed a few minutes of inference over $476$
+recordings, on weights that already existed, against a corpus nobody trained on. It
+required no annotation, no collection and no additional training. Set against the cost of
+the grid that produced those weights, it is a rounding error, and it is the only step in
+this study that changed what could be concluded. The audits of this
+literature~\cite{roberts2021, han2022} record that external validation is usually absent;
+the present results suggest that its absence is not explained by its cost.
+
+Four reporting practices follow directly from what the numbers here show, and each
+addresses something a single accuracy figure concealed.
+
+The first is to report sensitivity and specificity separately rather than, or at least
+alongside, any quantity that averages them. The fall described in
+Section~\ref{sec:res-external} is almost entirely a fall in sensitivity, and an
+application that monitors a patient for cough frequency is harmed by exactly that
+component. Balanced accuracy halves the visible damage, and plain accuracy on a prior of
+this shape hides it almost completely.
+
+The second is to report an estimate of run to run variation. Every condition here was run
+under five seeds, and the spread that produced is the quantity against which an effect has
+to be judged. The denoising effects in Section~\ref{sec:res-denoise} are smaller than that
+spread in three of the comparisons and comparable to it in the fourth, so none of them
+could have been claimed from a single run however large the test partition was. A
+difference of a few tenths of a point, reported without a spread, is not a result.
+
+The third is to report the area under the curve beside the thresholded figures. It cost
+nothing here, since the scores were already being saved, and it answered a question the
+thresholded numbers could not: whether a practitioner facing this degradation should
+reach for recalibration. Table~\ref{tab:threshold} says they should not, and without the
+ranking statistic there would have been no way to tell.
+
+The fourth is to report what the false positives are, and not merely how many. The
+aggregate specificity of $84.3$ per cent in Table~\ref{tab:external} is not an alarming
+number on its own. Table~\ref{tab:confusion} shows that it is composed of a severe and
+localised failure on sneezes together with much lower rates elsewhere, and it is the
+localisation, not the aggregate, that identifies what is missing from the training data.
+
+A fifth practice concerns the partition rather than the reporting. The partition here is
+built over participants, which is what makes it possible to say that the in corpus figures
+are not speaker recognition in disguise. That was not sufficient to make them transfer,
+which is the point of this paper, but it was necessary in order to interpret them at all.
+A corpus that does not publish a participant identifier cannot support this, and
+Section~\ref{sec:res-regime} describes one that does not.
+
+\subsection{What the corpora would need to contain}\label{sec:disc-corpora}
+
+The concentration of errors described in Section~\ref{sec:res-external} points at a
+property of the training corpus rather than of the model. A detector trained against
+breathing, sustained vowels and counting is never required to separate coughing from any
+other forced expiration, and it turns out not to. The remedy is not more data of the same
+kind. A corpus ten times the size, collected under the same protocol, would supply ten
+times as many easy negatives and would leave the distinction that matters untested.
+
+What would help is a negative class assembled against the confusions the task actually
+presents. Sneezing, throat clearing, burping, gasping and sighing all share the mechanism
+that makes a cough acoustically distinctive, and a prompted collection could obtain them
+the same way it obtains coughs, by asking. That the human annotated corpus used here
+supplies such material at all is a consequence of its ontology rather than of any
+intention to support this task, and the $106$ cough clips it contains are too few to
+train on.
+
+Label provenance should also be stated rather than assumed. The three regimes examined
+here are routinely treated as interchangeable sources of ground truth, and they support
+different claims. A prompt establishes what a participant was asked to do. An annotation
+establishes what a listener judged to be present. A detector score establishes what
+another model believed, and a figure obtained by training and testing against it measures
+agreement between two classifiers, which is not a clinical quantity at all. None of the
+three is useless, and the first in particular is what makes a matched speaker disjoint
+partition possible here. The difficulty is in reporting a number obtained under one of
+them as though it had been obtained under another.
+
+Finally, a corpus that publishes a derived label should publish the procedure that
+produced it in a form that can be re-executed. Section~\ref{sec:res-regime} documents a
+selection that cannot be reproduced from the corpus as released, because the reported
+count falls strictly between two consecutive attainable values, and an expert annotated
+subset that cannot be used to estimate the corpus error rate because it was drawn from
+where the detector was already confident. Neither property is a defect of the recordings,
+and both limit what any study built on them can establish.

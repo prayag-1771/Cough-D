@@ -51,23 +51,23 @@ across three label regimes}
 
 \abstract{Reported accuracies for automatic cough detection sit in the high nineties, yet
 audits report that such models are seldom validated outside their development corpus and
-often separate the classes by reading a confound. Which part is responsible has not been
-isolated, because label provenance, the difficulty of the negative class and run to run
-variation ordinarily move together. This study holds the preprocessing, the architecture
-and the training protocol fixed and varies the provenance of the label. Three corpora are
-used: one labelled by what a participant was asked to do, one labelled by a human listener
-against an audio ontology, and one labelled by the score of another classifier. The class
-prior is matched across all three, partitions are built over participants so that no
-speaker crosses a split, every condition is repeated under five seeds, and conditions are
-compared by McNemar's test on paired per recording decisions rather than on summary
-accuracies. Trained and tested within the prompted corpus, a ResNet18 reaches 98.6 per
-cent balanced accuracy on held out speakers. The same weights applied without retraining
-to human annotated audio at the same prior reach 70.2 per cent, and the loss is
-asymmetric: specificity falls to 84.3 per cent while sensitivity falls to 56.0. Wavelet
-shrinkage does not recover it, and removes a median of 0.67 per cent of signal power, so
-the inputs it produces differ very little from the originals. The external set is small
-and single source, so the size of the fall is estimated less precisely than its
-direction.}
+often separate the classes by a confound. Which part is responsible has not been isolated,
+because label provenance, negative class difficulty and run to run variation ordinarily
+move together. This study holds the preprocessing, the architecture and the training
+protocol fixed and varies the provenance of the label. Three corpora are used, labelled
+respectively by the instruction a participant followed, by a human listener against an
+audio ontology, and by the score of another classifier. The class prior is matched across
+all three, partitions are speaker disjoint, every condition is repeated under five seeds,
+and conditions are compared by McNemar's test on paired decisions. Within the prompted
+corpus a ResNet18 reaches 98.6 per cent balanced accuracy on held out speakers. The same
+weights, applied without retraining to human annotated audio at the same prior, reach 70.2
+per cent: specificity falls to 84.3 per cent while sensitivity falls to 56.0. The loss is
+one of discrimination, not calibration, the area under the curve falling from 0.998 to
+0.749, so moving the threshold recovers little of it. Sneezes are assigned to the cough
+class more often than coughs are, locating the failure in a negative class that holds no
+forced expirations. Wavelet shrinkage does not help, removing a median of 0.67 per cent
+of signal power. The external set is small and single source, so the fall is estimated
+less precisely in size than in direction.}
 
 \keywords{Audio classification, External validation, Wavelet shrinkage, Respiratory sound
 analysis, Dataset bias}
@@ -154,6 +154,14 @@ The specific contributions are the following.
       from $0.998$ to $0.749$, and moving the decision threshold to the best position for
       the external set recovers only $1.7$ points.
 
+\item An account of what the detectors confuse, obtained from the annotated classes of
+      the external negatives. The false positives are concentrated rather than diffuse,
+      and they fall on the other forced expirations: clips labelled as sneezes are
+      assigned to the cough class in $67.8$ per cent of decisions, a higher rate than the
+      same models achieve on clips that are genuinely coughs. The negative class of the
+      prompted corpus contains no forced expiration, so the distinction was never one the
+      models were required to learn.
+
 \item An assessment of wavelet shrinkage as a preprocessing step under a protocol able to
       detect an effect of the size being claimed for it. Measured against the spread across
       seeds, the gain does not survive: the largest improvement observed is $1.30$
@@ -165,11 +173,13 @@ The specific contributions are the following.
       the expert annotated subset cannot be used to estimate the corpus label error rate
       because it is not a random sample of the corpus.
 
-\item A statement of the computational conditions in enough detail to be acted upon,
-      including a measured account of a failure mode that produces no error and no warning
-      and costs a factor of $6.4$ in training throughput, together with the measurement
-      that distinguishes its cause from the plausible alternative.
 \end{itemize}
+
+The computational conditions are stated in enough detail to be acted upon rather than
+merely reproduced, and Section~\ref{sec:setup-train} records a measured account of one
+failure mode that produces no error and no warning while costing a factor of $6.4$ in
+training throughput, together with the measurement that distinguishes its cause from the
+plausible alternative.
 
 Nothing in what follows should be read as a claim that cough detection is unachievable, or
 that the architectures examined here are inadequate to it. The networks fit the prompted
@@ -187,6 +197,8 @@ shrinkage, the spectrogram and the networks in the order the signal meets them.
 Section~\ref{sec:setup} describes the corpora and their label regimes, the partitioning,
 the training protocol and the statistical procedure. Section~\ref{sec:results} reports the
 grid, the external evaluation and the comparison across regimes.
+Section~\ref{sec:discussion} draws out what follows for how detectors of this kind should
+be evaluated and what the corpora would need to contain.
 Section~\ref{sec:conclusion} states what the results support and what they do not.
 
 \section{Related work and its limitations}\label{sec:related}
@@ -932,6 +944,57 @@ first number is simply the proportion of non-coughs in the external set. The mod
 assigned every one of the $476$ recordings to the majority class, and an evaluation
 reporting accuracy alone would have recorded it as the second best run of that condition.
 
+Because the external negatives are annotated against the ontology, it is possible to ask
+not merely how many false positives there are but what produces them.
+Table~\ref{tab:confusion} gives the rate at which clips carrying each annotated class are
+assigned to the cough class, pooled over every ResNet18 run.
+
+\begin{table}[htbp]
+\caption{What the detectors call a cough, by annotated class, pooled over every ResNet18 run on the external set. The third column counts the decisions in which a clip carrying that label was assigned to the cough class, and the fourth expresses it as a rate. A clip may carry several labels, so the rows overlap and their counts do not sum to the size of the negative class. The recall on clips actually labelled cough is given for comparison in the final row: several kinds of non-cough sound are assigned to the cough class more readily than coughs themselves are.}\label{tab:confusion}
+\small
+\begin{tabular}{@{}lrrc@{}}
+\toprule
+Annotated class & Decisions & Called cough & Per cent \\
+\midrule
+Sneeze & 360 & 244 & $67.8$ \\
+Burping & 440 & 149 & $33.9$ \\
+Whispering & 520 & 139 & $26.7$ \\
+Gasp & 200 & 41 & $20.5$ \\
+Sigh & 280 & 56 & $20.0$ \\
+Breathing & 800 & 132 & $16.5$ \\
+Yell & 280 & 40 & $14.3$ \\
+Male speech & 2320 & 316 & $13.6$ \\
+Speech & 4180 & 492 & $11.8$ \\
+Laughter & 1400 & 161 & $11.5$ \\
+Female speech & 1460 & 143 & $9.8$ \\
+Child speech & 440 & 34 & $7.7$ \\
+Chewing & 360 & 22 & $6.1$ \\
+\addlinespace
+Cough, as recall & 2120 & 1200 & $56.6$ \\
+\botrule
+\end{tabular}
+\end{table}
+
+The errors are not spread evenly over the negative class, and the concentration is
+severe. Clips labelled \textsf{Sneeze} are called coughs in $67.8$ per cent of decisions.
+That is a higher rate than the detectors achieve on clips that really are coughs, where
+recall over the same runs is $56.6$ per cent. On this evidence a sneeze is more likely to
+be reported as a cough than a cough is. Burping follows at $33.9$ per cent, whispering at
+$26.7$, gasping at $20.5$ and sighing at $20.0$, while breathing sits at $16.5$ and the
+speech classes fall between $7.7$ and $13.6$.
+
+The ordering is interpretable, and it is the one the construction of the prompted corpus
+predicts. The sounds most readily confused with coughing are the other forced
+expirations. A sneeze, a burp, a gasp and a sigh are each a sudden release of air through
+the vocal tract, distinguished from a cough by details a detector has no reason to encode
+if it was never required to. The negative class of the prompted corpus is breathing,
+sustained vowels and counting, and not one of those is a forced expiration. A model
+trained against it is never asked to separate coughing from sneezing, and the external
+evaluation finds that it cannot. This is the mechanism behind the loss of discrimination
+reported above, and it indicates what a corpus intended to support cough detection would
+need to contain: not more recordings, but negatives that are hard in the particular way
+that matters.
+
 \subsection{What the classifier derived corpus can establish}\label{sec:res-regime}
 
 The third regime is reported separately because the quantity it measures is different in
@@ -996,6 +1059,96 @@ audio might all raise the in corpus figures. None of them is likely to change th
 that matters, because the gap reported here is not between one training recipe and another
 but between performance measured inside a corpus and performance measured outside it, and
 a recipe that improves the former has no particular reason to improve the latter.
+
+\section{Implications for how cough detectors are evaluated}\label{sec:discussion}
+
+The results above are specific to three corpora and one pipeline, but the way they fail
+generalises, and the practices that would have exposed the failure earlier are neither
+expensive nor novel. This section sets out what follows for anyone building or reviewing
+a detector of this kind. Section~\ref{sec:disc-protocol} concerns the evaluation protocol
+and Section~\ref{sec:disc-corpora} concerns what the corpora themselves would need to
+contain.
+
+\subsection{What an adequate protocol costs}\label{sec:disc-protocol}
+
+The external evaluation reported here consumed a few minutes of inference over $476$
+recordings, on weights that already existed, against a corpus nobody trained on. It
+required no annotation, no collection and no additional training. Set against the cost of
+the grid that produced those weights, it is a rounding error, and it is the only step in
+this study that changed what could be concluded. The audits of this
+literature~\cite{roberts2021, han2022} record that external validation is usually absent;
+the present results suggest that its absence is not explained by its cost.
+
+Four reporting practices follow directly from what the numbers here show, and each
+addresses something a single accuracy figure concealed.
+
+The first is to report sensitivity and specificity separately rather than, or at least
+alongside, any quantity that averages them. The fall described in
+Section~\ref{sec:res-external} is almost entirely a fall in sensitivity, and an
+application that monitors a patient for cough frequency is harmed by exactly that
+component. Balanced accuracy halves the visible damage, and plain accuracy on a prior of
+this shape hides it almost completely.
+
+The second is to report an estimate of run to run variation. Every condition here was run
+under five seeds, and the spread that produced is the quantity against which an effect has
+to be judged. The denoising effects in Section~\ref{sec:res-denoise} are smaller than that
+spread in three of the comparisons and comparable to it in the fourth, so none of them
+could have been claimed from a single run however large the test partition was. A
+difference of a few tenths of a point, reported without a spread, is not a result.
+
+The third is to report the area under the curve beside the thresholded figures. It cost
+nothing here, since the scores were already being saved, and it answered a question the
+thresholded numbers could not: whether a practitioner facing this degradation should
+reach for recalibration. Table~\ref{tab:threshold} says they should not, and without the
+ranking statistic there would have been no way to tell.
+
+The fourth is to report what the false positives are, and not merely how many. The
+aggregate specificity of $84.3$ per cent in Table~\ref{tab:external} is not an alarming
+number on its own. Table~\ref{tab:confusion} shows that it is composed of a severe and
+localised failure on sneezes together with much lower rates elsewhere, and it is the
+localisation, not the aggregate, that identifies what is missing from the training data.
+
+A fifth practice concerns the partition rather than the reporting. The partition here is
+built over participants, which is what makes it possible to say that the in corpus figures
+are not speaker recognition in disguise. That was not sufficient to make them transfer,
+which is the point of this paper, but it was necessary in order to interpret them at all.
+A corpus that does not publish a participant identifier cannot support this, and
+Section~\ref{sec:res-regime} describes one that does not.
+
+\subsection{What the corpora would need to contain}\label{sec:disc-corpora}
+
+The concentration of errors described in Section~\ref{sec:res-external} points at a
+property of the training corpus rather than of the model. A detector trained against
+breathing, sustained vowels and counting is never required to separate coughing from any
+other forced expiration, and it turns out not to. The remedy is not more data of the same
+kind. A corpus ten times the size, collected under the same protocol, would supply ten
+times as many easy negatives and would leave the distinction that matters untested.
+
+What would help is a negative class assembled against the confusions the task actually
+presents. Sneezing, throat clearing, burping, gasping and sighing all share the mechanism
+that makes a cough acoustically distinctive, and a prompted collection could obtain them
+the same way it obtains coughs, by asking. That the human annotated corpus used here
+supplies such material at all is a consequence of its ontology rather than of any
+intention to support this task, and the $106$ cough clips it contains are too few to
+train on.
+
+Label provenance should also be stated rather than assumed. The three regimes examined
+here are routinely treated as interchangeable sources of ground truth, and they support
+different claims. A prompt establishes what a participant was asked to do. An annotation
+establishes what a listener judged to be present. A detector score establishes what
+another model believed, and a figure obtained by training and testing against it measures
+agreement between two classifiers, which is not a clinical quantity at all. None of the
+three is useless, and the first in particular is what makes a matched speaker disjoint
+partition possible here. The difficulty is in reporting a number obtained under one of
+them as though it had been obtained under another.
+
+Finally, a corpus that publishes a derived label should publish the procedure that
+produced it in a form that can be re-executed. Section~\ref{sec:res-regime} documents a
+selection that cannot be reproduced from the corpus as released, because the reported
+count falls strictly between two consecutive attainable values, and an expert annotated
+subset that cannot be used to estimate the corpus error rate because it was drawn from
+where the detector was already confident. Neither property is a defect of the recordings,
+and both limit what any study built on them can establish.
 
 \section{Conclusion}\label{sec:conclusion}
 

@@ -1,0 +1,26 @@
+\begin{table}[htbp]
+\caption{What the detectors call a cough, by annotated class, pooled over every ResNet18 run on the external set. The third column counts the decisions in which a clip carrying that label was assigned to the cough class, and the fourth expresses it as a rate. A clip may carry several labels, so the rows overlap and their counts do not sum to the size of the negative class. The recall on clips actually labelled cough is given for comparison in the final row: several kinds of non-cough sound are assigned to the cough class more readily than coughs themselves are.}\label{tab:confusion}
+\small
+\begin{tabular}{@{}lrrc@{}}
+\toprule
+Annotated class & Decisions & Called cough & Per cent \\
+\midrule
+Sneeze & 360 & 244 & $67.8$ \\
+Burping & 440 & 149 & $33.9$ \\
+Whispering & 520 & 139 & $26.7$ \\
+Gasp & 200 & 41 & $20.5$ \\
+Sigh & 280 & 56 & $20.0$ \\
+Breathing & 800 & 132 & $16.5$ \\
+Yell & 280 & 40 & $14.3$ \\
+Male speech & 2320 & 316 & $13.6$ \\
+Speech & 4180 & 492 & $11.8$ \\
+Laughter & 1400 & 161 & $11.5$ \\
+Female speech & 1460 & 143 & $9.8$ \\
+Child speech & 440 & 34 & $7.7$ \\
+Chewing & 360 & 22 & $6.1$ \\
+\addlinespace
+Cough, as recall & 2120 & 1200 & $56.6$ \\
+\botrule
+\end{tabular}
+\end{table}
+

@@ -32,7 +32,8 @@ PARTS = [
     '03_design.tex',
     '04_setup.tex',
     '05_results.tex',
-    '06_conclusion.tex',
+    '06_discussion.tex',
+    '07_conclusion.tex',
     '99_back.tex',
 ]
 
