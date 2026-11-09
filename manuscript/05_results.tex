@@ -1,0 +1,182 @@
+\section{Results}\label{sec:results}
+
+The results are reported in the order the questions were posed.
+Section~\ref{sec:res-grid} gives the grid over the prompt derived corpus, which establishes
+what the pipeline achieves when it is trained and tested in the usual way.
+Section~\ref{sec:res-denoise} tests the preprocessing step the work being extended relies
+on. Section~\ref{sec:res-external} applies the retained weights to human annotated audio
+without retraining, which is the test the earlier evaluation did not make.
+Section~\ref{sec:res-regime} reports what can and cannot be established from the
+classifier derived corpus. Section~\ref{sec:res-limits} states what the results do not
+support. Every figure quoted below is computed from the saved per recording decisions by
+the scripts released with the code, and the tables are generated from those same files.
+
+\subsection{Detection within the prompt derived corpus}\label{sec:res-grid}
+
+Table~\ref{tab:grid} gives the grid. ResNet18 reaches $99.09 \pm 0.13$ per cent accuracy
+on the linear condition, with sensitivity $97.72 \pm 0.62$ and specificity
+$99.48 \pm 0.26$, for a balanced accuracy of $98.60 \pm 0.22$ and a correlation
+coefficient of $0.974 \pm 0.004$. These are the numbers the literature reports for this
+task, obtained here under a partition in which no participant appears on both sides of a
+split, so the simplest explanation for a high score is excluded: the networks are not
+recognising speakers they were trained on.
+
+\input{tab_grid}
+
+The compact network reaches $96.43 \pm 0.38$ per cent on the same condition, and the gap
+between it and ResNet18 is larger in sensitivity, $93.35 \pm 1.60$ against
+$97.72 \pm 0.62$, than in specificity, where the two are within a point and a half of each
+other. Capacity is therefore being spent on recovering coughs rather than on rejecting the
+negatives, which is consistent with a negative class that is not difficult.
+
+One result in the table is a failure rather than a measurement, and it is reported because
+it bears on the stability of the smaller network. The compact network on the wavelet
+shrunk mel condition averages $73.93 \pm 41.40$ per cent sensitivity. A standard deviation
+of that size on a quantity bounded by one hundred is not a spread about a mean; it records
+that the seeds did not all produce the same kind of model. One seed converged to the
+majority class and stayed there, which on this prior produces an accuracy equal to the
+non-cough frequency and a sensitivity of zero. The trainer reports any optimiser step
+abandoned for a non-finite gradient, and none were abandoned in that run, so this is an
+optimisation outcome rather than the arithmetic failure described in
+Section~\ref{sec:setup-train}. The relevant observation is that it happened under the
+condition combining the mel axis with shrinkage and under no other, and only to the
+network with the least capacity.
+
+\subsection{Whether wavelet shrinkage helps}\label{sec:res-denoise}
+
+Table~\ref{tab:paired} tests the shrinkage on paired decisions. The result is that it does
+not help, and that where the effect reaches significance it is negative.
+
+\input{tab_paired}
+
+For ResNet18 on the linear axis, $66$ recordings are classified correctly without
+shrinkage and incorrectly with it, against $37$ in the reverse direction. The test rejects
+at an adjusted $p$ of $0.0111$, and the accuracy change across seeds is
+$-0.29 \pm 0.19$ points. The effect is therefore real, small, and in the direction
+opposite to the one claimed for the method. On the mel axis the same comparison is
+indistinguishable from no effect, $71$ against $65$ discordant recordings at an adjusted
+$p$ of $0.668$. For the compact network on the mel axis the test rejects decisively, but
+the accuracy change is $-3.89 \pm 8.25$ points, and a spread four times the size of the
+effect is the degenerate seed discussed above rather than a property of shrinkage.
+
+Section~\ref{sec:design-denoise} supplies the mechanism, and it is worth restating here
+because it determines how far these results generalise. The universal threshold is set
+from an estimate of the noise level in the finest detail coefficients. On recordings
+already as clean as these it falls far below the signal, and the measured consequence is
+that a median of $0.67$ per cent of signal power is removed, with quartiles at $0.08$ and
+$2.28$ per cent. The two input conditions are therefore very nearly the same images, and
+the null result is what should be expected rather than a surprise. This is a statement
+about applying this family of shrinkage rules to corpora of this quality; it is not
+evidence that denoising cannot help audio that is genuinely noisy.
+
+\subsection{Transfer to human annotated audio}\label{sec:res-external}
+
+The weights retained from the grid were applied, without retraining and without adaptation
+of any kind, to the exhaustively verified evaluation split of the human annotated corpus
+at the same class prior. Table~\ref{tab:external} gives the result and
+Figure~\ref{fig:transfer} plots it against the in corpus figure for the same weights.
+
+\input{tab_external}
+
+ResNet18 on the linear condition falls from $98.60$ per cent balanced accuracy to
+$70.18 \pm 0.44$. The fall is not uniform across the two classes, and the asymmetry is the
+substantive finding. Specificity declines from $99.48 \pm 0.26$ to $84.32 \pm 3.24$, which
+is a real loss but leaves the detector still rejecting most non-coughs. Sensitivity falls
+from $97.72 \pm 0.62$ to $56.04 \pm 4.04$. A detector that recovered better than ninety
+seven coughs in a hundred within the corpus it was fitted to recovers barely more than
+half of them once the recordings, the microphones, the annotators and the definition of
+the negative class all change together.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.74\textwidth]{transfer.pdf}
+\caption{Balanced accuracy within the prompt derived corpus against balanced accuracy for
+the same saved weights on human annotated audio, at a matched class prior. The dotted line
+marks equal performance. Error bars are one standard deviation across seeds on each axis.
+The four input conditions are plotted for each architecture and are not labelled
+separately, because they fall on top of one another: the choice of frequency axis and the
+presence or absence of shrinkage move the result by far less than the change of corpus
+does.}\label{fig:transfer}
+\end{figure}
+
+Two further observations follow from the same table. The first is that the ordering of the
+architectures is preserved: the compact network, which was roughly three points behind
+ResNet18 in corpus, is roughly ten points behind it out of corpus, at
+$60.10 \pm 1.06$ on the linear condition. Whatever the larger network learned that the
+smaller one did not, part of it transfers. The second is that the input conditions remain
+indistinguishable from one another under the change of corpus. Shrinkage gains
+$1.30 \pm 1.36$ accuracy points on the linear axis externally, which is a change smaller
+than its own spread across seeds, so the external set does not rescue the preprocessing
+step either.
+
+The degenerate seed reappears here and is worth following, because it shows what a single
+run can conceal. The compact network on the wavelet shrunk mel condition records, for one
+seed, an accuracy of $77.73$ per cent against a balanced accuracy of exactly $50.00$. The
+first number is simply the proportion of non-coughs in the external set. The model
+assigned every one of the $476$ recordings to the majority class, and an evaluation
+reporting accuracy alone would have recorded it as the second best run of that condition.
+
+\subsection{What the classifier derived corpus can establish}\label{sec:res-regime}
+
+The third regime is reported separately because the quantity it measures is different in
+kind. A model trained and tested on labels thresholded from a detector score is measured on
+its agreement with that detector. A high figure there is evidence that two classifiers
+agree, which is not evidence that a cough is present, and no amount of care in the
+partitioning changes what is being measured.
+
+Two properties of the corpus bound what can be done with it, and both are settled from the
+published metadata without reference to any model. The first concerns reproducing the
+selection used by the work being extended, which reports $15{,}619$ cough and $7{,}261$
+non-cough recordings. The lower count is reachable: a threshold of $0.1271$ on the detector
+score yields exactly $7{,}261$. The upper count is reachable by no threshold on that
+column. Six recordings carry the score $0.8961$ exactly, so the number at or above a
+threshold in that neighbourhood steps from $15{,}617$ directly to $15{,}623$, and
+$15{,}619$ lies strictly between two consecutive attainable values. Some further criterion
+was applied that the original does not record. This work therefore uses round thresholds
+and states them rather than tuning towards a near miss.
+
+The second concerns the expert annotations. The corpus carries judgements from clinical
+annotators on a subset of its recordings, and it is tempting to use agreement on that
+subset to estimate the label error rate of the corpus as a whole. That inference requires
+the annotated subset to be a random sample, and it is not. Of $34{,}434$ recordings, $820$
+carry an annotation, which is $2.4$ per cent of the corpus. Their detector scores average
+$0.8815$ against $0.6353$ for the remainder, and $81.5$ per cent of them score at or above
+$0.8$ against $53.2$ per cent of the unannotated recordings. The recordings sent for
+annotation were drawn overwhelmingly from the region where the detector was already
+confident. Agreement measured there cannot be extrapolated to the recordings nearest the
+threshold, which are precisely the ones whose labels are least secure, so the label error
+rate of this corpus is not estimable from what it publishes.
+
+\subsection{What these results do not establish}\label{sec:res-limits}
+
+The external evaluation rests on a single corpus, and on the $476$ recordings its
+evaluation split supplies at the matched prior, of which $106$ are coughs. The direction
+and the approximate size of the fall are secure, since the interval estimates do not come
+close to the in corpus figures, but a set of this size cannot pin the magnitude down
+finely, and one external corpus cannot distinguish a general failure to transfer from a
+particular mismatch between these two collections. A second human annotated corpus would
+separate those, and none was available that met the conditions used here.
+
+The three regimes differ in more than the provenance of their labels, and the matching
+performed here does not remove every difference. The class prior is matched by
+construction and the preprocessing, architecture and protocol are held fixed, but the
+recording conditions, the devices and the populations differ between corpora and cannot be
+equalised after the fact. What the comparison isolates is the combined effect of label
+provenance and negative class composition; it does not separate those two from each other.
+Doing so would require one corpus annotated twice, once by prompt and once by a listener,
+over the same recordings, which does not currently exist.
+
+The partition over the classifier derived corpus is not speaker disjoint, because that
+corpus publishes no participant identifier. Any contributor who submitted more than once
+may appear on both sides of a split, and the figures for that regime should be read with
+that in mind. The same limitation does not affect the prompt derived corpus, where the
+partition is built over participants, nor the human annotated split, which is never
+trained on.
+
+Finally, the architectures examined here are standard image classifiers applied to
+spectrograms, trained for at most eight epochs with a fixed learning rate and no
+augmentation. A longer schedule, a search over learning rates, or augmentation designed for
+audio might all raise the in corpus figures. None of them is likely to change the finding
+that matters, because the gap reported here is not between one training recipe and another
+but between performance measured inside a corpus and performance measured outside it, and
+a recipe that improves the former has no particular reason to improve the latter.

@@ -1,0 +1,19 @@
+recordings in the released metadata: 34434
+recordings carrying a detector score: 34434
+
+Reproducing the selection used by the work being extended
+  cough recordings (target 15619)
+    not reachable by any threshold on this column
+    the count steps from 15617 directly to 15623 at a score of 0.8961
+    6 recordings carry the value 0.8961 exactly
+  non-cough recordings, as a lower tail (target 7261)
+    reachable: a threshold of -0.1271 yields exactly 7261
+
+Is the expert annotated subset a random sample
+  annotated: 820 recordings, 2.4 per cent of the corpus
+  detector score, annotated   quartiles 0.8711 0.9662 0.9885, mean 0.8815
+  detector score, unannotated quartiles 0.1913 0.8417 0.9766, mean 0.6353
+  lowest score among the annotated recordings: 0.0316
+  unannotated recordings scoring below that: 3267, 9.7 per cent of the unannotated
+  at or above 0.8: 81.5 per cent of annotated, 53.2 per cent of unannotated
+  at or above 0.9: 70.1 per cent of annotated, 44.2 per cent of unannotated

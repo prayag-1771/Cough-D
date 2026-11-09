@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+\caption{Wavelet shrinkage tested on paired decisions over the prompt derived corpus. For each pair of conditions, $b$ counts the recordings the unprocessed condition classifies correctly and the shrunk condition does not, and $c$ counts the reverse; these are the only recordings McNemar's test uses. Adjusted $p$ values follow the step down procedure of Holm over the family of comparisons in this table. The final column gives the change in accuracy across seeds, which is the quantity that determines whether an effect of this size could be claimed from a single run.}\label{tab:paired}
+\small
+\begin{tabular}{@{}llrrrllc@{}}
+\toprule
+Architecture & Comparison & Seeds & $b$ & $c$ & $p$ & $p$ adj.\ & Accuracy change \\
+\midrule
+ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0111$ & $-0.29 \pm 0.19$ \\
+ResNet18 & mel $\rightarrow$ wav+mel & 5 & 71 & 65 & $0.668$ & $0.668$ & $-0.06 \pm 0.39$ \\
+Compact & mel $\rightarrow$ wav+mel & 5 & 525 & 133 & $<10^{-4}$ & $<10^{-4}$ & $-3.89 \pm 8.25$ \\
+\botrule
+\end{tabular}
+\end{table}
+

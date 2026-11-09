@@ -1,128 +1,112 @@
-"""Assemble the three parts into the single file Springer requires, then run
-the structural checks. A checker validates structure, not truth, so this
-covers citation coverage, float order, lone subsections, dashes and abstract
-rules only; the reference metadata was checked separately against Crossref."""
-import io
+"""Assemble the manuscript sections into the single file the publisher wants.
+
+    python -I assemble.py
+    python -I assemble.py --out manuscript/paper.tex --check
+
+Springer asks for one .tex file. Keeping the sections apart while writing them
+and joining them here means the join is reproducible and the pieces stay small
+enough to reason about. The bibliography is generated from references.bib in
+citation order by bib2tex.py, so the .bib remains the only place a reference is
+written down.
+
+Nothing is reformatted on the way through. The output is the concatenation of
+the parts in the order given below, with the generated bibliography placed
+after the back matter and before the end of the document.
+"""
+import argparse
+import os
 import re
+import subprocess
+import sys
 
-PARTS = ['part1.tex', 'part2.tex', 'part3.tex']
-OUT = 'Cough_Detection_Wavelet_Denoising_SpringerNature.tex'
+ROOT = os.path.dirname(os.path.abspath(__file__))
+MS = os.path.join(ROOT, 'manuscript')
 
-src = ''.join(io.open(p, encoding='utf-8').read().rstrip() + '\n\n' for p in PARTS)
-
-# Drop whole line comments so nothing in the delivered file reads as a note.
-# Trailing '%' is left alone: in the \AtBeginDocument blocks it suppresses a
-# spurious space and removing it would change the output.
-kept = [ln for ln in src.split('\n') if not ln.lstrip().startswith('%')]
-src = '\n'.join(kept)
-src = re.sub(r'\n{3,}', '\n\n', src)
-
-# part2 draws the pipeline with TikZ, so the preamble must load it
-src = src.replace(
-    '\\usepackage{listings}\n',
-    '\\usepackage{listings}\n\\usepackage{tikz}\n'
-    '\\usetikzlibrary{arrows.meta,positioning}\n')
-
-io.open(OUT, 'w', encoding='utf-8', newline='\n').write(src)
-print('written %s (%d chars)' % (OUT, len(src)))
-
-body = src[src.index('\\maketitle'):]
-fails = []
-
-# --- citations -----------------------------------------------------------
-defined = set(re.findall(r'\\bibitem\{([^}]+)\}', src))
-cited = set()
-for grp in re.findall(r'\\cite\{([^}]+)\}', src):
-    cited.update(k.strip() for k in grp.split(','))
-print('\nreferences defined : %d' % len(defined))
-print('reference keys cited: %d' % len(cited))
-if cited - defined:
-    fails.append('cited but undefined: %s' % sorted(cited - defined))
-if defined - cited:
-    fails.append('defined but never cited: %s' % sorted(defined - cited))
-if len(defined) < 30:
-    fails.append('fewer than 30 references (%d)' % len(defined))
-
-# --- float order ---------------------------------------------------------
-labels = re.findall(r'\\label\{((?:tab|fig):[^}]+)\}', src)
-first_ref = {}
-for m in re.finditer(r'\\ref\{((?:tab|fig):[^}]+)\}', body):
-    first_ref.setdefault(m.group(1), m.start())
-for kind in ('tab', 'fig'):
-    declared = [l for l in labels if l.startswith(kind)]
-    order = [l for l in sorted(first_ref, key=first_ref.get) if l.startswith(kind)]
-    if declared != order:
-        fails.append('%s declared %s but first cited %s' % (kind, declared, order))
-    missing = [l for l in declared if l not in first_ref]
-    if missing:
-        fails.append('%s never referenced in text: %s' % (kind, missing))
-print('tables: %d, figures: %d, all referenced in declaration order: %s'
-      % (len([l for l in labels if l.startswith('tab')]),
-         len([l for l in labels if l.startswith('fig')]),
-         not any('declared' in f or 'never referenced' in f for f in fails)))
-
-# --- lone subsections ----------------------------------------------------
-heads = [(m.start(), m.group(1), m.group(2))
-         for m in re.finditer(r'\\(section|subsection|subsubsection)\*?\{([^}]*)\}', body)]
-rank = {'section': 0, 'subsection': 1, 'subsubsection': 2}
-for i, (_, lvl, name) in enumerate(heads):
-    kids = 0
-    for _, l2, _ in heads[i + 1:]:
-        if rank[l2] <= rank[lvl]:
-            break
-        if rank[l2] == rank[lvl] + 1:
-            kids += 1
-    if kids == 1:
-        fails.append('"%s" has exactly one child' % name)
-
-# --- dashes in body ------------------------------------------------------
-stripped = re.sub(r'\\begin\{thebibliography\}.*?\\end\{thebibliography\}', '', body, flags=re.S)
-stripped = re.sub(r'\\begin\{tabular\}.*?\\end\{tabular\}', '', stripped, flags=re.S)
-stripped = re.sub(r'\$[^$]*\$', '', stripped)
-# \label and \ref arguments are cross-reference keys, not prose, and their
-# internal hyphens are not compound hyphens in body text
-stripped = re.sub(r'\\(label|ref|eqref|cite)\{[^}]*\}', '', stripped)
-if '---' in stripped or '\u2014' in stripped:
-    fails.append('em dash present in body text')
-hyph = set(re.findall(r'(?<![\\{A-Za-z0-9])([a-z]{3,}-[a-z]{3,})(?![}])', stripped))
-if hyph:
-    fails.append('compound hyphens in body: %s' % sorted(hyph))
-
-# --- abstract ------------------------------------------------------------
-abst = re.search(r'\\abstract\{(.*?)\n\n', src, re.S)
-if abst:
-    a = abst.group(1)
-    if '\u2014' in a or '---' in a or re.search(r'(?<![\\A-Za-z])[a-z]+-[a-z]+', a):
-        fails.append('dash or hyphen in abstract')
-    if '\\cite' in a:
-        fails.append('citation in abstract')
-    if re.search(r'\([^)]*[0-9]\.[0-9]+[^)]*\)', a):
-        fails.append('parenthetical statistic in abstract')
-
-# --- size ----------------------------------------------------------------
-words = len(re.sub(r'\\[a-zA-Z]+\*?(\[[^\]]*\])?(\{[^}]*\})?', ' ', stripped).split())
-print('body words (excluding bibliography and tabulars): %d' % words)
-
-# --- nothing in the file may read as a note or instruction ----------------
-NOTE_PAT = [
-    r'\bTODO\b', r'\bFIXME\b', r'\bTBD\b', r'\bXXX+\b', r'lorem', r'ipsum',
-    r'placeholder', r'to be filled', r'fill in', r'insert your', r'insert the',
-    r'replace (this|with)', r'space reserved', r'values to be', r'if required',
-    r'\bnote to\b', r'<[A-Za-z][A-Za-z ./]{2,}>', r'your (name|paper|data)',
-    r'\byou should\b', r'\bplease \w+', r'\[insert', r'\bN/A\b',
+# The order the document is read in. The front matter carries the title block
+# and the abstract, so it has to precede everything \maketitle depends on.
+PARTS = [
+    '00_preamble.tex',
+    '01_front.tex',
+    '01_intro.tex',
+    '02_related.tex',
+    '03_design.tex',
+    '04_setup.tex',
+    '05_results.tex',
+    '06_conclusion.tex',
+    '99_back.tex',
 ]
-notes = []
-for pat in NOTE_PAT:
-    for m in re.finditer(pat, src, re.I):
-        line = src[:m.start()].count('\n') + 1
-        notes.append('line %d: %s' % (line, src[max(0, m.start() - 40):m.end() + 40]
-                                      .replace('\n', ' ')))
-if notes:
-    fails.append('note-like text found: %s' % notes[:5])
-print('comment lines in output: %d' % sum(
-    1 for ln in src.split('\n') if ln.lstrip().startswith('%')))
-print('note-like strings: %d' % len(notes))
 
-print('\n' + ('ALL STRUCTURAL CHECKS PASSED' if not fails else 'ISSUES:'))
-for f in fails:
-    print('  - %s' % f)
+# Only these carry \cite, and bib2tex reads them to fix the reference order.
+BODY = PARTS[1:]
+
+
+INPUT = re.compile(r'^[ \t]*\\input\{([^}]+)\}[ \t]*$', re.M)
+
+
+def read(name, depth=0):
+    """One section, with any \\input it names pulled in where it stands.
+
+    The result tables are generated from the saved decisions by tables.py
+    rather than written out by hand, so the sections refer to them by
+    \\input. The publisher wants one file, and expanding here keeps both
+    true at once: the tables stay generated and the output stays single.
+    """
+    path = os.path.join(MS, name)
+    if not os.path.exists(path):
+        sys.exit('missing section: %s' % name)
+    with open(path, encoding='utf-8') as fh:
+        text = fh.read().rstrip() + '\n'
+    if depth > 4:
+        sys.exit('\\input nested too deeply at %s' % name)
+
+    def swap(m):
+        target = m.group(1)
+        if not target.endswith('.tex'):
+            target += '.tex'
+        if not os.path.exists(os.path.join(MS, target)):
+            sys.exit('%s refers to a missing file: %s' % (name, target))
+        return read(target, depth + 1).rstrip()
+
+    return INPUT.sub(swap, text)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--out', default=os.path.join('manuscript', 'paper.tex'))
+    ap.add_argument('--check', action='store_true',
+                    help='run check_paper.py on the assembled file')
+    a = ap.parse_args()
+
+    bib_out = os.path.join(MS, 'bibliography.tex')
+    cmd = [sys.executable, '-I', os.path.join(ROOT, 'bib2tex.py'),
+           os.path.join(ROOT, 'references.bib')]
+    cmd += [os.path.join(MS, n) for n in BODY if os.path.exists(os.path.join(MS, n))]
+    cmd += ['-o', bib_out]
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    sys.stdout.write(r.stdout)
+    sys.stderr.write(r.stderr)
+    if r.returncode != 0:
+        sys.exit('the bibliography and the manuscript disagree; see above')
+
+    chunks = [read(n) for n in PARTS[:-1]]
+    chunks.append(read(PARTS[-1]))
+    chunks.append(read('bibliography.tex'))
+    chunks.append('\\end{document}\n')
+
+    out = os.path.join(ROOT, a.out)
+    with open(out, 'w', encoding='utf-8', newline='\n') as fh:
+        fh.write('\n'.join(chunks))
+
+    words = sum(len(c.split()) for c in chunks)
+    print('wrote %s: %d parts, %d words of source'
+          % (os.path.relpath(out, ROOT), len(PARTS), words))
+
+    if a.check:
+        r = subprocess.run([sys.executable, '-I',
+                            os.path.join(ROOT, 'check_paper.py'), out])
+        return r.returncode
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

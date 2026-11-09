@@ -1,0 +1,38 @@
+\title[Prompted labels and easy negatives inflate cough detection accuracy]{Prompted
+labels and easy negatives inflate cough detection accuracy: a controlled comparison
+across three label regimes}
+
+\author[1]{\fnm{Prayag} \sur{Sharma}}\email{prayag.sharma2024@vitstudent.ac.in}
+
+\author*[2]{\fnm{Ravi} \sur{Tiwari}}\email{ravi.tiwari@vit.ac.in}
+
+\affil[1]{\orgdiv{School of Computer Science and Engineering (SCOPE)},
+\orgname{Vellore Institute of Technology}, \orgaddress{\country{India}}}
+
+\affil*[2]{\orgname{Vellore Institute of Technology},
+\orgaddress{\country{India}}}
+
+\abstract{Reported accuracies for automatic cough detection sit in the high nineties, yet
+audits report that such models are seldom validated outside their development corpus and
+often separate the classes by reading a confound. Which part is responsible has not been
+isolated, because label provenance, the difficulty of the negative class and run to run
+variation ordinarily move together. This study holds the preprocessing, the architecture
+and the training protocol fixed and varies the provenance of the label. Three corpora are
+used: one labelled by what a participant was asked to do, one labelled by a human listener
+against an audio ontology, and one labelled by the score of another classifier. The class
+prior is matched across all three, partitions are built over participants so that no
+speaker crosses a split, every condition is repeated under five seeds, and conditions are
+compared by McNemar's test on paired per recording decisions rather than on summary
+accuracies. Trained and tested within the prompted corpus, a ResNet18 reaches 98.6 per
+cent balanced accuracy on held out speakers. The same weights applied without retraining
+to human annotated audio at the same prior reach 70.2 per cent, and the loss is
+asymmetric: specificity falls to 84.3 per cent while sensitivity falls to 56.0. Wavelet
+shrinkage does not recover it, and removes a median of 0.67 per cent of signal power, so
+the inputs it produces differ very little from the originals. The external set is small
+and single source, so the size of the fall is estimated less precisely than its
+direction.}
+
+\keywords{Audio classification, External validation, Wavelet shrinkage, Respiratory sound
+analysis, Dataset bias}
+
+\maketitle

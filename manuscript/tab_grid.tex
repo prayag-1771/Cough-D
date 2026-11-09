@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\caption{Detection on the prompt derived corpus, over held out speakers. Each row is one architecture under one input condition, averaged over the seeds in the third column, with the standard deviation across those seeds. Sensitivity is the proportion of coughs recovered and specificity the proportion of non-coughs rejected; both are reported because the class prior makes accuracy alone uninformative.}\label{tab:grid}
+\small
+\begin{tabular}{@{}llrcccc@{}}
+\toprule
+Architecture & Input & Seeds & Accuracy & Sensitivity & Specificity & MCC \\
+\midrule
+ResNet18 & linear & 5 & $99.09 \pm 0.13$ & $97.72 \pm 0.62$ & $99.48 \pm 0.26$ & $0.974 \pm 0.004$ \\
+ & wav+linear & 5 & $98.80 \pm 0.24$ & $97.14 \pm 0.53$ & $99.27 \pm 0.30$ & $0.965 \pm 0.007$ \\
+ & mel & 5 & $98.71 \pm 0.20$ & $97.19 \pm 0.81$ & $99.14 \pm 0.10$ & $0.963 \pm 0.006$ \\
+ & wav+mel & 5 & $98.65 \pm 0.49$ & $97.37 \pm 0.53$ & $99.02 \pm 0.74$ & $0.961 \pm 0.014$ \\
+\addlinespace
+MobileNetV2 & mel & 3 & $98.66 \pm 0.26$ & $98.44 \pm 0.39$ & $98.72 \pm 0.42$ & $0.962 \pm 0.007$ \\
+\addlinespace
+Compact & linear & 5 & $96.43 \pm 0.38$ & $93.35 \pm 1.60$ & $97.31 \pm 0.74$ & $0.898 \pm 0.010$ \\
+ & mel & 5 & $96.46 \pm 0.34$ & $92.46 \pm 2.24$ & $97.60 \pm 0.83$ & $0.898 \pm 0.009$ \\
+ & wav+mel & 5 & $92.57 \pm 8.29$ & $73.93 \pm 41.40$ & $97.89 \pm 1.55$ & $0.715 \pm 0.400$ \\
+\botrule
+\end{tabular}
+\end{table}
+

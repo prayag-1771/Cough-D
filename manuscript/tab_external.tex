@@ -1,0 +1,19 @@
+\begin{table}[htbp]
+\caption{The same saved weights applied to human annotated audio at the same class prior, with no retraining and no adaptation of any kind. The rows correspond one to one with those of Table~\ref{tab:grid}. The fall is asymmetric: specificity is substantially retained while sensitivity is not, so the detectors continue to reject non-coughs and stop recovering coughs.}\label{tab:external}
+\small
+\begin{tabular}{@{}llrcccc@{}}
+\toprule
+Architecture & Input & Seeds & Accuracy & Sensitivity & Specificity & MCC \\
+\midrule
+ResNet18 & linear & 5 & $78.03 \pm 1.62$ & $56.04 \pm 4.04$ & $84.32 \pm 3.24$ & $0.391 \pm 0.012$ \\
+ & wav+linear & 5 & $79.33 \pm 1.19$ & $53.21 \pm 1.27$ & $86.81 \pm 1.65$ & $0.402 \pm 0.022$ \\
+ & mel & 5 & $78.70 \pm 2.31$ & $57.55 \pm 3.89$ & $84.76 \pm 3.88$ & $0.411 \pm 0.031$ \\
+ & wav+mel & 5 & $77.56 \pm 3.18$ & $59.62 \pm 2.78$ & $82.70 \pm 4.34$ & $0.401 \pm 0.056$ \\
+\addlinespace
+Compact & linear & 5 & $68.11 \pm 1.55$ & $45.66 \pm 4.88$ & $74.54 \pm 3.26$ & $0.184 \pm 0.015$ \\
+ & mel & 5 & $73.36 \pm 5.67$ & $38.49 \pm 9.70$ & $83.35 \pm 10.00$ & $0.235 \pm 0.049$ \\
+ & wav+mel & 5 & $70.34 \pm 8.57$ & $36.79 \pm 21.85$ & $79.95 \pm 16.25$ & $0.161 \pm 0.106$ \\
+\botrule
+\end{tabular}
+\end{table}
+

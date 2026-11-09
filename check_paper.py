@@ -182,6 +182,12 @@ def check_prose(t, r):
     masked = t
     for s in ALLOWED_DASH + ALLOWED_HYPHEN:
         masked = masked.replace(s, 'X' * len(s))
+    # Cross-reference keys are identifiers, not prose. They are hyphenated by
+    # convention, and counting them buries the compound hyphens that are
+    # really in the writing.
+    masked = re.sub(r'\\(label|ref|eqref|cite[a-z]*|input|include|url|'
+                    r'graphicspath|includegraphics)\s*(\[[^\]]*\])?\{[^{}]*\}',
+                    ' ', masked)
     masked = re.sub(r'\\[a-zA-Z@]+', ' ', masked)        # commands
     masked = re.sub(r'\{[^{}]*\.(png|pdf|eps|jpg)\}', ' ', masked)
 

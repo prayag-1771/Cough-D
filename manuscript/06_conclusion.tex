@@ -1,0 +1,23 @@
+\section{Conclusion}\label{sec:conclusion}
+
+Holding the preprocessing, the architecture and the training protocol fixed and varying
+only the provenance of the label shows that the accuracy ordinarily reported for cough
+detection is a property of the evaluation as much as of the detector. A ResNet18 that
+recovers $97.72$ per cent of coughs from held out speakers in a prompted corpus recovers
+$56.04$ per cent of them from human annotated audio at the same class prior, with no
+retraining between the two measurements, while its specificity falls far less; the
+detector does not stop working so much as stop finding coughs, and a single accuracy
+figure hides which of the two has happened. Wavelet shrinkage does not close the gap, and
+the reason is measurable rather than conjectural: on recordings of this quality the
+universal threshold removes a median of $0.67$ per cent of signal power, so the two input
+conditions it produces are very nearly the same images and no difference between them was
+available to be found. The classifier derived regime cannot settle the question either,
+because its published selection is not reproducible by any threshold on the score it
+supplies and its expert annotated subset is drawn overwhelmingly from the region where
+that score was already confident, which leaves the label error rate of the corpus
+unestimable from what it publishes. None of this says that cough detection is
+unachievable, and the networks examined here fit the prompted corpus almost perfectly from
+a speaker disjoint partition. It says that the experiment which would have revealed the
+limitation costs a few hours of inference on a corpus nobody trained on, that it was
+available throughout, and that reporting the number obtained without it describes the
+corpus rather than the task.
