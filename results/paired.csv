@@ -1,7 +1,8 @@
 corpus,arch,base,denoised,seeds,b,c,p,p_adjusted,accuracy_change,change_sd
-coswara,resnet18,linear,wav_linear,5,66,37,0.0055359,0.0166077,-0.29,0.19
+coswara,resnet18,linear,wav_linear,5,66,37,0.0055359,0.0221436,-0.29,0.19
 coswara,resnet18,mel,wav_mel,5,71,65,0.668266,1,-0.06,0.39
+coswara,mobilenetv2,linear,wav_linear,2,25,17,0.279956,0.839869,-0.20,0.21
 coswara,mobilenetv2,mel,wav_mel,5,53,58,0.704379,1,+0.05,0.40
-coswara,compact,mel,wav_mel,5,525,133,5.94142e-56,2.37657e-55,-3.89,8.25
+coswara,compact,mel,wav_mel,5,525,133,5.94142e-56,2.97071e-55,-3.89,8.25
 coughvid,resnet18,linear,wav_linear,5,79,36,7.51646e-05,0.000150329,-0.68,0.38
 coughvid,resnet18,mel,wav_mel,5,51,53,0.921949,0.921949,+0.03,0.51

@@ -17,6 +17,9 @@
 \graphicspath{{figs/}{./figs/}{./}}
 \setkeys{Gin}{draft=false}
 
+\newcommand{\figref}[1]{Figure~\ref{#1}}
+\newcommand{\parstart}[2]{#1#2}
+
 \raggedbottom
 
 \AtBeginDocument{%
@@ -44,39 +47,40 @@ across three label regimes}
 \author*[2]{\fnm{Ravi} \sur{Tiwari}}\email{ravi.tiwari@vit.ac.in}
 
 \affil[1]{\orgdiv{School of Computer Science and Engineering (SCOPE)},
-\orgname{Vellore Institute of Technology}, \orgaddress{\country{India}}}
+\orgname{Vellore Institute of Technology}, \orgaddress{\city{Chennai},
+\state{Tamil Nadu}, \country{India}}}
 
-\affil*[2]{\orgname{Vellore Institute of Technology},
-\orgaddress{\country{India}}}
+\affil*[2]{\orgdiv{School of Electronics Engineering (SENSE)},
+\orgname{Vellore Institute of Technology}, \orgaddress{\city{Chennai},
+\state{Tamil Nadu}, \country{India}}}
 
-\abstract{Reported accuracies for automatic cough detection sit in the high nineties, yet
-audits report that such models are seldom validated outside their development corpus and
-often separate the classes by a confound. Which part is responsible has not been isolated,
-because label provenance, negative class difficulty and run to run variation ordinarily
-move together. This study holds the preprocessing, the architecture and the training
-protocol fixed and varies the provenance of the label. Three corpora are used, labelled
-respectively by the instruction a participant followed, by a human listener against an
-audio ontology, and by the score of another classifier. The class prior is matched across
-all three, partitions are speaker disjoint, every condition is repeated under five seeds,
-and conditions are compared by McNemar's test on paired decisions. Within the prompted
-corpus a ResNet18 reaches 98.6 per cent balanced accuracy on held out speakers. The same
-weights, applied without retraining to human annotated audio at the same prior, reach 70.2
-per cent: specificity falls to 84.3 per cent while sensitivity falls to 56.0. The loss is
-one of discrimination, not calibration, the area under the curve falling from 0.998 to
-0.749, so moving the threshold recovers little of it. Sneezes are assigned to the cough
-class more often than coughs are, locating the failure in a negative class that holds no
-forced expirations. Wavelet shrinkage does not help, removing a median of 0.67 per cent
-of signal power. The external set is small and single source, so the fall is estimated
-less precisely in size than in direction.}
+\abstract{Reported accuracies for automatic cough detection sit in the high nineties, yet audits find
+such models are rarely validated outside their development corpus and often separated by a
+confound. Which factor is responsible has not been isolated, because label provenance,
+negative class difficulty and seed variation ordinarily move together. This study fixes the
+preprocessing, architecture and training protocol, and varies only the provenance of the
+label. Three corpora are used, labelled respectively by a participant's instruction, by a
+human listener against an audio ontology, and by another classifier's score. The class
+prior is matched in all three, partitions are speaker disjoint wherever an identifier
+permits, every condition runs under five seeds, and conditions are compared by a paired
+test on per recording decisions. Within the prompted corpus a residual network reaches 98.6
+per cent balanced accuracy on held out speakers. The same weights, applied without
+retraining to human annotated audio at the same prior, reach 70.2 per cent: specificity
+falls to 84.3 per cent, sensitivity to 56.0. The loss is one of discrimination rather than
+calibration, the area under the curve falling from 0.998 to 0.749, so moving the threshold
+recovers little of it. Sneezes are called coughs more often than coughs are, locating the
+failure in a negative class holding no forced expirations. Wavelet shrinkage does not help,
+removing a median of 0.67 per cent of signal power. The external set is small and single
+source, so the fall is better established in direction than in size.}
 
-\keywords{Audio classification, External validation, Wavelet shrinkage, Respiratory sound
-analysis, Dataset bias}
+\keywords{Audio classification, dataset bias, external validation, label provenance, respiratory
+sound analysis, wavelet shrinkage}
 
 \maketitle
 
 \section{Introduction}\label{sec:intro}
 
-Coughing is among the few sounds the body produces that carries diagnostic information and
+\parstart{C}{oughing} is among the few sounds the body produces that carries diagnostic information and
 can be recorded without instrumentation, a clinician or a visit. That combination is what
 has made automatic cough analysis attractive: a microphone is already in every pocket, and
 a cough is loud, brief and distinctive. Almost every application proposed for it, from
@@ -413,7 +417,7 @@ of that routine, and it is not expected to agree with it coefficient by coeffici
 alternative, reporting a result under a rule that was never named, is what makes a
 denoising comparison impossible to check.
 
-Figure~\ref{fig:denoise} shows what the shrinkage removes, for one cough and one
+\figref{fig:denoise} shows what the shrinkage removes, for one cough and one
 non-cough recording. The removed component is drawn on its own vertical scale, because
 drawn against the signal it is a flat line at zero; the magnification needed to make it
 visible is printed on each panel, beside the fraction of signal power it accounts for.
@@ -526,7 +530,7 @@ FSD50K eval & a person & the \textsf{Cough} label & breathing, sneeze, gasp, sig
 \addlinespace
 COUGHVID v3 & a detector & \texttt{cough\_detected} $\geq 0.9$ &
   \texttt{cough\_detected} $\leq 0.1$ & $8{,}398$ & $0.2239$ & no \
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -675,7 +679,7 @@ Precision & single \
 Input & $224 \times 224$, normalised by ImageNet channel statistics \
 Batch size & $64$ ResNet18, $16$ MobileNetV2, $128$ compact, $8$ DenseNet201 \
 Seeds & five, and three for DenseNet201 \
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -704,7 +708,7 @@ Compact & contiguous & $64$ & $912.6$ & $1608$ \
 DenseNet201 & contiguous & $32$ & $1.6$ & $7372$ \
 DenseNet201 & contiguous & $12$ & $33.6$ & $3070$ \
 DenseNet201 & contiguous & $8$ & $29.8$ & $2284$ \
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -810,14 +814,14 @@ ResNet18 & linear & 5 & $99.09 \pm 0.13$ & $97.72 \pm 0.62$ & $99.48 \pm 0.26$ &
  & wav+mel & 5 & $98.65 \pm 0.49$ & $97.37 \pm 0.53$ & $99.02 \pm 0.74$ & $0.961 \pm 0.014$ \\
 \addlinespace
 MobileNetV2 & linear & 5 & $99.10 \pm 0.12$ & $97.68 \pm 0.97$ & $99.50 \pm 0.28$ & $0.974 \pm 0.003$ \\
- & wav+linear & 1 & $99.06 \pm 0.00$ & $96.88 \pm 0.00$ & $99.68 \pm 0.00$ & $0.973 \pm 0.000$ \\
+ & wav+linear & 2 & $98.93 \pm 0.18$ & $97.43 \pm 0.79$ & $99.36 \pm 0.45$ & $0.969 \pm 0.005$ \\
  & mel & 5 & $98.86 \pm 0.33$ & $98.35 \pm 0.34$ & $99.00 \pm 0.49$ & $0.967 \pm 0.009$ \\
  & wav+mel & 5 & $98.91 \pm 0.23$ & $97.50 \pm 0.91$ & $99.31 \pm 0.30$ & $0.968 \pm 0.007$ \\
 \addlinespace
 Compact & linear & 5 & $96.43 \pm 0.38$ & $93.35 \pm 1.60$ & $97.31 \pm 0.74$ & $0.898 \pm 0.010$ \\
  & mel & 5 & $96.46 \pm 0.34$ & $92.46 \pm 2.24$ & $97.60 \pm 0.83$ & $0.898 \pm 0.009$ \\
  & wav+mel & 5 & $92.57 \pm 8.29$ & $73.93 \pm 41.40$ & $97.89 \pm 1.55$ & $0.715 \pm 0.400$ \\
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -852,21 +856,24 @@ not help, and that where the effect reaches significance it is negative.
 \toprule
 Architecture & Comparison & Seeds & $b$ & $c$ & $p$ & $p$ adj.\ & Accuracy change \\
 \midrule
-ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0166$ & $-0.29 \pm 0.19$ \\
+ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0221$ & $-0.29 \pm 0.19$ \\
 ResNet18 & mel $\rightarrow$ wav+mel & 5 & 71 & 65 & $0.668$ & $1.000$ & $-0.06 \pm 0.39$ \\
+MobileNetV2 & linear $\rightarrow$ wav+linear & 2 & 25 & 17 & $0.280$ & $0.840$ & $-0.20 \pm 0.21$ \\
 MobileNetV2 & mel $\rightarrow$ wav+mel & 5 & 53 & 58 & $0.704$ & $1.000$ & $+0.05 \pm 0.40$ \\
 Compact & mel $\rightarrow$ wav+mel & 5 & 525 & 133 & $<10^{-4}$ & $<10^{-4}$ & $-3.89 \pm 8.25$ \\
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
 For ResNet18 on the linear axis, $66$ recordings are classified correctly without
-shrinkage and incorrectly with it, against $37$ in the reverse direction. The test rejects
-at an adjusted $p$ of $0.0166$, and the accuracy change across seeds is
+shrinkage and incorrectly with it, against $37$ in the reverse direction. McNemar's test
+on those discordant pairs gives $p = 0.0055$, which survives the step down correction over
+the family in Table~\ref{tab:paired}, and the accuracy change across seeds is
 $-0.29 \pm 0.19$ points. The effect is therefore real, small, and in the direction
 opposite to the one claimed for the method. On the mel axis the same comparison is
-indistinguishable from no effect, $71$ against $65$ discordant recordings at an adjusted
-$p$ of $0.668$. For the compact network on the mel axis the test rejects decisively, but
+indistinguishable from no effect, $71$ against $65$ discordant recordings and
+$p = 0.668$ before any correction. For the compact network on the mel axis the test rejects
+decisively, but
 the accuracy change is $-3.89 \pm 8.25$ points, and a spread four times the size of the
 effect is the degenerate seed discussed above rather than a property of shrinkage.
 
@@ -885,7 +892,7 @@ evidence that denoising cannot help audio that is genuinely noisy.
 The weights retained from the grid were applied, without retraining and without adaptation
 of any kind, to the exhaustively verified evaluation split of the human annotated corpus
 at the same class prior. Table~\ref{tab:external} gives the result and
-Figure~\ref{fig:transfer} plots it against the in corpus figure for the same weights.
+\figref{fig:transfer} plots it against the in corpus figure for the same weights.
 
 \begin{table}[htbp]
 \caption{The same saved weights applied to human annotated audio at the same class prior, with no retraining and no adaptation of any kind. The rows correspond one to one with those of Table~\ref{tab:grid}. The fall is asymmetric: specificity is substantially retained while sensitivity is not, so the detectors continue to reject non-coughs and stop recovering coughs.}\label{tab:external}
@@ -906,7 +913,7 @@ MobileNetV2 & linear & 2 & $76.26 \pm 2.08$ & $62.74 \pm 2.00$ & $80.14 \pm 3.25
 Compact & linear & 5 & $68.11 \pm 1.55$ & $45.66 \pm 4.88$ & $74.54 \pm 3.26$ & $0.184 \pm 0.015$ \\
  & mel & 5 & $73.36 \pm 5.67$ & $38.49 \pm 9.70$ & $83.35 \pm 10.00$ & $0.235 \pm 0.049$ \\
  & wav+mel & 5 & $70.34 \pm 8.57$ & $36.79 \pm 21.85$ & $79.95 \pm 16.25$ & $0.161 \pm 0.106$ \\
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -962,7 +969,7 @@ MobileNetV2 & linear & $0.998 \pm 0.000$ & $0.769 \pm 0.005$ & $71.44 \pm 0.62$ 
 Compact & linear & $0.992 \pm 0.001$ & $0.648 \pm 0.012$ & $60.10 \pm 1.06$ & $62.23 \pm 1.59$ \\
  & mel & $0.993 \pm 0.000$ & $0.687 \pm 0.017$ & $60.92 \pm 1.01$ & $64.36 \pm 1.58$ \\
  & wav+mel & $0.985 \pm 0.012$ & $0.651 \pm 0.028$ & $58.37 \pm 5.18$ & $62.10 \pm 2.02$ \\
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -1021,7 +1028,7 @@ Child speech & 440 & 34 & $7.7$ \\
 Chewing & 360 & 22 & $6.1$ \\
 \addlinespace
 Cough, as recall & 2120 & 1200 & $56.6$ \\
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -1075,7 +1082,7 @@ ResNet18 & linear & 5 & $98.94 \pm 0.14$ & $97.45 \pm 0.68$ & $99.37 \pm 0.29$ &
  & wav+linear & 5 & $98.25 \pm 0.51$ & $97.87 \pm 1.00$ & $98.36 \pm 0.85$ & $0.951 \pm 0.013$ \\
  & mel & 5 & $98.57 \pm 0.32$ & $98.09 \pm 1.05$ & $98.71 \pm 0.52$ & $0.960 \pm 0.009$ \\
  & wav+mel & 5 & $98.60 \pm 0.25$ & $97.38 \pm 0.48$ & $98.96 \pm 0.36$ & $0.960 \pm 0.007$ \\
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -1371,100 +1378,100 @@ all are regenerated by the ingest scripts from the original releases.
 \begin{thebibliography}{32}
 
 \bibitem{imran2020}
-Imran, A., Posokhova, I., Qureshi, H.N., Masood, U., Riaz, M.S., Ali, K., John, C.N., Hussain, M.I., Nabeel, M.: .  ()
+Imran, A., Posokhova, I., Qureshi, H.N., Masood, U., Riaz, M.S., Ali, K., John, C.N., Hussain, M.I., Nabeel, M.: AI4COVID-19: AI Enabled Preliminary Diagnosis for COVID-19 from Cough Samples via an App. Informatics in Medicine Unlocked 20, 100378 (2020)
 
 \bibitem{laguarta2020}
-Laguarta, J., Hueto, F., Subirana, B.: .  ()
+Laguarta, J., Hueto, F., Subirana, B.: COVID-19 Artificial Intelligence Diagnosis Using Only Cough Recordings. IEEE Open Journal of Engineering in Medicine and Biology 1, 275–281 (2020)
 
 \bibitem{pahar2021}
-Pahar, M., Klopper, M., Warren, R., Niesler, T.: .  ()
+Pahar, M., Klopper, M., Warren, R., Niesler, T.: COVID-19 Cough Classification Using Machine Learning and Global Smartphone Recordings. Computers in Biology and Medicine 135, 104572 (2021)
 
 \bibitem{roberts2021}
-Roberts, M., Driggs, D., Thorpe, M., Gilbey, J., Yeung, M., Ursprung, S., Aviles-Rivero, A.I., Etmann, C. et al.: .  ()
+Roberts, M., Driggs, D., Thorpe, M., Gilbey, J., Yeung, M., Ursprung, S., Aviles-Rivero, A.I., Etmann, C. et al.: Common Pitfalls and Recommendations for Using Machine Learning to Detect and Prognosticate for COVID-19 Using Chest Radiographs and CT Scans. Nature Machine Intelligence 3(3), 199–217 (2021)
 
 \bibitem{han2022}
-Han, J., Xia, T., Spathis, D., Bondareva, E., Brown, C., Chauhan, J., Dang, T., Grammenos, A., Hasthanasombat, A., Floto, A., Cicuta, P., Mascolo, C.: .  ()
+Han, J., Xia, T., Spathis, D., Bondareva, E., Brown, C., Chauhan, J., Dang, T., Grammenos, A., Hasthanasombat, A., Floto, A., Cicuta, P., Mascolo, C.: Sounds of COVID-19: Exploring Realistic Performance of Audio-Based Digital Testing. npj Digital Medicine 5, 16 (2022)
 
 \bibitem{coppock2024}
-Coppock, H., Nicholson, G., Kiskin, I., Koutra, V., Baker, K., Budd, J., Payne, R., Karoune, E., Hurley, D., Titcomb, A., Egglestone, S., Tendero Ca{\~n}adas, A., Butler, L., Jersakova, R., Mellor, J., Patel, S., Thornley, T., Diggle, P., Richardson, S., Packham, J., Schuller, B.W., Pigoli, D., Gilmour, S., Roberts, S., Holmes, C.: .  ()
+Coppock, H., Nicholson, G., Kiskin, I., Koutra, V., Baker, K., Budd, J., Payne, R., Karoune, E., Hurley, D., Titcomb, A., Egglestone, S., Tendero Ca{\~n}adas, A., Butler, L., Jersakova, R., Mellor, J., Patel, S., Thornley, T., Diggle, P., Richardson, S., Packham, J., Schuller, B.W., Pigoli, D., Gilmour, S., Roberts, S., Holmes, C.: Audio-Based AI Classifiers Show No Evidence of Improved COVID-19 Screening over Simple Symptoms Checkers. Nature Machine Intelligence 6, 229–242 (2024)
 
 \bibitem{xia2021}
-Xia, T., Spathis, D., Brown, C., Chauhan, J., Grammenos, A., Han, J., Hasthanasombat, A., Bondareva, E., Dang, T., Floto, A., Cicuta, P., Mascolo, C.: . In:  ()
+Xia, T., Spathis, D., Brown, C., Chauhan, J., Grammenos, A., Han, J., Hasthanasombat, A., Bondareva, E., Dang, T., Floto, A., Cicuta, P., Mascolo, C.: COVID-19 Sounds: A Large-Scale Audio Dataset for Digital Respiratory Screening. In: Advances in Neural Information Processing Systems 34, Datasets and Benchmarks Track (2021)
 
 \bibitem{zhou2021}
-Zhou, Q., Shan, J., Ding, W., Wang, C., Yuan, S., Sun, F., Li, H., Fang, B.: .  ()
+Zhou, Q., Shan, J., Ding, W., Wang, C., Yuan, S., Sun, F., Li, H., Fang, B.: Cough Recognition Based on Mel-Spectrogram and Convolutional Neural Network. Frontiers in Robotics and AI 8, 580080 (2021)
 
 \bibitem{coswara2020}
-Sharma, N., Krishnan, P., Kumar, R., Ramoji, S., Chetupalli, S.R., R., N., Ghosh, P.K., Ganapathy, S.: . In:  ()
+Sharma, N., Krishnan, P., Kumar, R., Ramoji, S., Chetupalli, S.R., R., N., Ghosh, P.K., Ganapathy, S.: Coswara: A Database of Breathing, Cough, and Voice Sounds for COVID-19 Diagnosis. In: Proceedings of Interspeech 2020, pp. 4811–4815 (2020)
 
 \bibitem{fsd50k2022}
-Fonseca, E., Favory, X., Pons, J., Font, F., Serra, X.: .  ()
+Fonseca, E., Favory, X., Pons, J., Font, F., Serra, X.: FSD50K: An Open Dataset of Human-Labeled Sound Events. IEEE/ACM Transactions on Audio, Speech, and Language Processing 30, 829–852 (2022)
 
 \bibitem{coughvid2021}
-Orlandic, L., Teijeiro, T., Atienza, D.: .  ()
+Orlandic, L., Teijeiro, T., Atienza, D.: The COUGHVID Crowdsourcing Dataset, a Corpus for the Study of Large-Scale Cough Analysis Algorithms. Scientific Data 8, 156 (2021)
 
 \bibitem{gemmeke2017}
-Gemmeke, J.F., Ellis, D.P.W., Freedman, D., Jansen, A., Lawrence, W., Moore, R.C., Plakal, M., Ritter, M.: . In:  ()
+Gemmeke, J.F., Ellis, D.P.W., Freedman, D., Jansen, A., Lawrence, W., Moore, R.C., Plakal, M., Ritter, M.: Audio Set: An Ontology and Human-Labeled Dataset for Audio Events. In: Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pp. 776–780 (2017)
 
 \bibitem{he2016}
-He, K., Zhang, X., Ren, S., Sun, J.: . In:  ()
+He, K., Zhang, X., Ren, S., Sun, J.: Deep Residual Learning for Image Recognition. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 770–778 (2016)
 
 \bibitem{sandler2018}
-Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., Chen, L.: . In:  ()
+Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., Chen, L.: MobileNetV2: Inverted Residuals and Linear Bottlenecks. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 4510–4520 (2018)
 
 \bibitem{huang2017}
-Huang, G., Liu, Z., van der Maaten, L., Weinberger, K.Q.: . In:  ()
+Huang, G., Liu, Z., van der Maaten, L., Weinberger, K.Q.: Densely Connected Convolutional Networks. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 2261–2269 (2017)
 
 \bibitem{zhang2026}
-Zhang, W., Teijeiro, T., Thevenot, J., Atienza, D.:  ()
+Zhang, W., Teijeiro, T., Thevenot, J., Atienza, D.: Why ML-Based Cough Models Do Not Generalize: A Systematic Cross-Dataset Evaluation for Tuberculosis Screening. arXiv:2608.25846 (2026)
 
 \bibitem{vocalsound2022}
-Gong, Y., Yu, J., Glass, J.: . In:  ()
+Gong, Y., Yu, J., Glass, J.: VocalSound: A Dataset for Improving Human Vocal Sounds Recognition. In: Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) (2022)
 
 \bibitem{donoho1994}
-Donoho, D.L., Johnstone, I.M.: .  ()
+Donoho, D.L., Johnstone, I.M.: Ideal Spatial Adaptation by Wavelet Shrinkage. Biometrika 81(3), 425–455 (1994)
 
 \bibitem{chang2000}
-Chang, S.G., Yu, B., Vetterli, M.: .  ()
+Chang, S.G., Yu, B., Vetterli, M.: Adaptive Wavelet Thresholding for Image Denoising and Compression. IEEE Transactions on Image Processing 9(9), 1532–1546 (2000)
 
 \bibitem{johnstone2005}
-Johnstone, I.M., Silverman, B.W.: .  ()
+Johnstone, I.M., Silverman, B.W.: Empirical Bayes Selection of Wavelet Thresholds. The Annals of Statistics 33(4), 1700–1752 (2005)
 
 \bibitem{mallat1989}
-Mallat, S.G.: .  ()
+Mallat, S.G.: A Theory for Multiresolution Signal Decomposition: The Wavelet Representation. IEEE Transactions on Pattern Analysis and Machine Intelligence 11(7), 674–693 (1989)
 
 \bibitem{stevens1937}
-Stevens, S.S., Volkmann, J., Newman, E.B.: .  ()
+Stevens, S.S., Volkmann, J., Newman, E.B.: A Scale for the Measurement of the Psychological Magnitude Pitch. The Journal of the Acoustical Society of America 8(3), 185–190 (1937)
 
 \bibitem{russakovsky2015}
-Russakovsky, O., Deng, J., Su, H., Krause, J. et al.: .  ()
+Russakovsky, O., Deng, J., Su, H., Krause, J. et al.: ImageNet Large Scale Visual Recognition Challenge. International Journal of Computer Vision 115(3), 211–252 (2015)
 
 \bibitem{kingma2015}
-Kingma, D.P., Ba, J.: . In:  ()
+Kingma, D.P., Ba, J.: Adam: A Method for Stochastic Optimization. In: Proceedings of the 3rd International Conference on Learning Representations (ICLR) (2015)
 
 \bibitem{paszke2019}
-Paszke, A., Gross, S., Massa, F. et al.: . In:  ()
+Paszke, A., Gross, S., Massa, F. et al.: PyTorch: An Imperative Style, High-Performance Deep Learning Library. In: Advances in Neural Information Processing Systems 32 (NeurIPS) (2019)
 
 \bibitem{matthews1975}
-Matthews, B.W.: .  ()
+Matthews, B.W.: Comparison of the Predicted and Observed Secondary Structure of T4 Phage Lysozyme. Biochimica et Biophysica Acta 405(2), 442–451 (1975)
 
 \bibitem{chicco2020}
-Chicco, D., Jurman, G.: .  ()
+Chicco, D., Jurman, G.: The Advantages of the Matthews Correlation Coefficient (MCC) over F1 Score and Accuracy in Binary Classification Evaluation. BMC Genomics 21, 6 (2020)
 
 \bibitem{wilson1927}
-Wilson, E.B.: .  ()
+Wilson, E.B.: Probable Inference, the Law of Succession, and Statistical Inference. Journal of the American Statistical Association 22(158), 209–212 (1927)
 
 \bibitem{brown2001}
-Brown, L.D., Cai, T.T., DasGupta, A.: .  ()
+Brown, L.D., Cai, T.T., DasGupta, A.: Interval Estimation for a Binomial Proportion. Statistical Science 16(2), 101–133 (2001)
 
 \bibitem{mcnemar1947}
-McNemar, Q.: .  ()
+McNemar, Q.: Note on the Sampling Error of the Difference between Correlated Proportions or Percentages. Psychometrika 12(2), 153–157 (1947)
 
 \bibitem{dietterich1998}
-Dietterich, T.G.: .  ()
+Dietterich, T.G.: Approximate Statistical Tests for Comparing Supervised Classification Learning Algorithms. Neural Computation 10(7), 1895–1923 (1998)
 
 \bibitem{holm1979}
-Holm, S.: .  ()
+Holm, S.: A Simple Sequentially Rejective Multiple Test Procedure. Scandinavian Journal of Statistics 6(2), 65–70 (1979)
 
 \end{thebibliography}
 

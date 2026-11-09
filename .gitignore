@@ -31,6 +31,21 @@ logs/
 # build it, so they are kept despite the rule above.
 !manuscript/figs/*.pdf
 
+# The IEEE Access class, IEEEtran, and the licensed fonts and journal logos
+# the class loads. These are the publisher's to distribute and not ours.
+# code/fetch_ieee_class.py installs all of them from IEEE's own archive, so a
+# clone is one command away from being able to build the Access target.
+manuscript/ieeeaccess.cls
+manuscript/IEEEtran.cls
+manuscript/spotcolor.sty
+manuscript/*.fd
+manuscript/*.map
+manuscript/*.tfm
+manuscript/*.pfb
+manuscript/logo.png
+manuscript/notaglinelogo.png
+manuscript/bullet.png
+
 __pycache__/
 *.pyc
 

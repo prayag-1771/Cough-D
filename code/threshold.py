@@ -161,7 +161,7 @@ def main():
         'Best possible \\\\',
         '\\midrule',
     ]
-    tail = ['\\botrule', '\\end{tabular}', '\\end{table}', '']
+    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table}', '']
     text = '\n'.join(head + body + tail) + '\n'
     with io.open(os.path.join(MS, 'tab_threshold.tex'), 'w',
                  encoding='utf-8', newline='\n') as fh:

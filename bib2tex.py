@@ -41,7 +41,13 @@ def parse(path):
     entries = {}
     for m in re.finditer(r'@(\w+)\s*\{\s*([^,\s]+)\s*,', text):
         kind, key = m.group(1).lower(), m.group(2)
-        i, depth = m.end() - 1, 0
+        # Scan from the brace that opens the entry, not from the comma after
+        # the key. Starting at the comma made the first field's own closing
+        # brace return the depth to zero, so the body ended after the author
+        # list and every later field was read as absent. The symptom was a
+        # reference list with correct authors and no titles, journals or
+        # years, which the entry count in the structural check could not see.
+        i, depth = text.index('{', m.start()), 0
         while i < len(text):
             if text[i] == '{':
                 depth += 1
@@ -97,6 +103,104 @@ def format_authors(raw):
     return ', '.join(out) + trailing
 
 
+def ieee_initials(given):
+    """'Hassan N.' -> 'H. N. '   IEEE puts a space between initials."""
+    out = []
+    for part in given.replace('.', ' ').split():
+        letter = re.sub(r'[^A-Za-z]', '', part)
+        if letter:
+            out.append(letter[0].upper() + '.')
+        elif part.startswith('{'):
+            out.append(part[1:2].upper() + '.')
+    return ' '.join(out)
+
+
+def ieee_authors(raw):
+    """Given names abbreviated to initials and placed before the surname.
+
+    The whole list is given rather than truncated, which is what the Access
+    template asks for: et al. is used only where the bibliography itself
+    records that the names were not published.
+    """
+    names = [a.strip() for a in re.split(r'\s+and\s+', unwrap(raw)) if a.strip()]
+    out, etal = [], False
+    for n in names:
+        if n == 'others':
+            etal = True
+            continue
+        if ',' in n:
+            sur, given = [p.strip() for p in n.split(',', 1)]
+        else:
+            bits = n.split()
+            sur, given = bits[-1], ' '.join(bits[:-1])
+        ini = ieee_initials(given)
+        out.append(('%s %s' % (ini, sur)).strip())
+    if etal:
+        return ', '.join(out) + ', \\emph{et al.}'
+    if len(out) > 2:
+        return ', '.join(out[:-1]) + ', and ' + out[-1]
+    return ' and '.join(out)
+
+
+def ieee_pages(pages):
+    """'4811--4815' -> ('pp.', '4811--4815');  '156' -> ('p.', '156')."""
+    if not pages:
+        return None
+    pages = pages.replace('–', '--')
+    return ('pp.' if '--' in pages else 'p.'), pages
+
+
+def format_entry_ieee(f):
+    """One reference in the style the Access template sets out.
+
+    Titles and container names are reproduced as the publisher prints them.
+    The style manual asks for sentence case and abbreviated periodical
+    names, but applying either by rule would mean lowercasing or contracting
+    words this script cannot tell apart from proper nouns, and a reference is
+    the one place in a manuscript where a reader cannot catch an error
+    without going to the cited work. Reproducing what was read from the
+    source is therefore preferred over guessing at the house style.
+    """
+    a = ieee_authors(f.get('author', ''))
+    title = unwrap(f.get('title', '')).rstrip('.')
+    year = unwrap(f.get('year', ''))
+    vol = unwrap(f.get('volume', ''))
+    num = unwrap(f.get('number', ''))
+    pp = ieee_pages(unwrap(f.get('pages', '')))
+    kind = f['__kind__']
+
+    bits = ['%s, ``%s,\'\'' % (a, title)] if a else ['``%s,\'\'' % title]
+
+    if kind == 'article':
+        bits.append('\\emph{%s},' % unwrap(f.get('journal', '')))
+        if vol:
+            bits.append('vol. %s,' % vol)
+        if num:
+            bits.append('no. %s,' % num)
+        if pp:
+            bits.append('%s %s,' % pp)
+        bits.append('%s.' % year)
+    elif kind in ('inproceedings', 'incollection'):
+        bits.append('in \\emph{%s},' % unwrap(f.get('booktitle', '')))
+        if pp:
+            bits.append('%s, %s %s.' % (year, pp[0], pp[1]))
+        else:
+            bits.append('%s.' % year)
+    elif kind == 'book':
+        pub = unwrap(f.get('publisher', ''))
+        bits = ['%s, \\emph{%s}.' % (a, title)] if a else ['\\emph{%s}.' % title]
+        if pub:
+            bits.append('%s,' % pub)
+        bits.append('%s.' % year)
+    else:
+        how = unwrap(f.get('howpublished', '')) or unwrap(f.get('note', ''))
+        bits.append('%s.' % year)
+        if how:
+            bits.append('[Online]. Available: %s' % how)
+
+    return ' '.join(b for b in bits if b.strip())
+
+
 def format_entry(f):
     a = format_authors(f.get('author', ''))
     title = unwrap(f.get('title', '')).rstrip('.')
@@ -148,7 +252,10 @@ def main():
     ap.add_argument('bib')
     ap.add_argument('body', nargs='+')
     ap.add_argument('-o', '--out', default=None)
+    ap.add_argument('--style', choices=('springer', 'ieee'), default='springer')
     a = ap.parse_args()
+    fmt = format_entry_ieee if a.style == 'ieee' else format_entry
+    width = '00' if a.style == 'ieee' else None
 
     entries = parse(a.bib)
     order = cited_order(a.body)
@@ -160,12 +267,12 @@ def main():
     for k in uncited:
         print('  in the bibliography but never cited: %s' % k, file=sys.stderr)
 
-    lines = ['\\begin{thebibliography}{%d}' % len(order)]
+    lines = ['\\begin{thebibliography}{%s}' % (width or len(order))]
     for k in order:
         if k in entries:
             lines.append('')
             lines.append('\\bibitem{%s}' % k)
-            lines.append(format_entry(entries[k]))
+            lines.append(fmt(entries[k]))
     lines.append('')
     lines.append('\\end{thebibliography}')
     text = '\n'.join(lines) + '\n'

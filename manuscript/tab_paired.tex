@@ -5,11 +5,12 @@
 \toprule
 Architecture & Comparison & Seeds & $b$ & $c$ & $p$ & $p$ adj.\ & Accuracy change \\
 \midrule
-ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0166$ & $-0.29 \pm 0.19$ \\
+ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0221$ & $-0.29 \pm 0.19$ \\
 ResNet18 & mel $\rightarrow$ wav+mel & 5 & 71 & 65 & $0.668$ & $1.000$ & $-0.06 \pm 0.39$ \\
+MobileNetV2 & linear $\rightarrow$ wav+linear & 2 & 25 & 17 & $0.280$ & $0.840$ & $-0.20 \pm 0.21$ \\
 MobileNetV2 & mel $\rightarrow$ wav+mel & 5 & 53 & 58 & $0.704$ & $1.000$ & $+0.05 \pm 0.40$ \\
 Compact & mel $\rightarrow$ wav+mel & 5 & 525 & 133 & $<10^{-4}$ & $<10^{-4}$ & $-3.89 \pm 8.25$ \\
-\botrule
+\bottomrule
 \end{tabular}
 \end{table}
 

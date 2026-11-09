@@ -99,7 +99,7 @@ def table(data, label, caption):
         '& MCC \\\\',
         '\\midrule',
     ]
-    tail = ['\\botrule', '\\end{tabular}', '\\end{table}', '']
+    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table}', '']
     return '\n'.join(head + body + tail) + '\n'
 
 
@@ -189,7 +189,7 @@ def paired_table(root, label, caption):
         'Accuracy change \\\\',
         '\\midrule',
     ]
-    tail = ['\\botrule', '\\end{tabular}', '\\end{table}', '']
+    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table}', '']
     return '\n'.join(head + body + tail) + '\n'
 
 

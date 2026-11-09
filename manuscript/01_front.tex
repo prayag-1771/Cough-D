@@ -7,32 +7,15 @@ across three label regimes}
 \author*[2]{\fnm{Ravi} \sur{Tiwari}}\email{ravi.tiwari@vit.ac.in}
 
 \affil[1]{\orgdiv{School of Computer Science and Engineering (SCOPE)},
-\orgname{Vellore Institute of Technology}, \orgaddress{\country{India}}}
+\orgname{Vellore Institute of Technology}, \orgaddress{\city{Chennai},
+\state{Tamil Nadu}, \country{India}}}
 
-\affil*[2]{\orgname{Vellore Institute of Technology},
-\orgaddress{\country{India}}}
+\affil*[2]{\orgdiv{School of Electronics Engineering (SENSE)},
+\orgname{Vellore Institute of Technology}, \orgaddress{\city{Chennai},
+\state{Tamil Nadu}, \country{India}}}
 
-\abstract{Reported accuracies for automatic cough detection sit in the high nineties, yet
-audits report that such models are seldom validated outside their development corpus and
-often separate the classes by a confound. Which part is responsible has not been isolated,
-because label provenance, negative class difficulty and run to run variation ordinarily
-move together. This study holds the preprocessing, the architecture and the training
-protocol fixed and varies the provenance of the label. Three corpora are used, labelled
-respectively by the instruction a participant followed, by a human listener against an
-audio ontology, and by the score of another classifier. The class prior is matched across
-all three, partitions are speaker disjoint, every condition is repeated under five seeds,
-and conditions are compared by McNemar's test on paired decisions. Within the prompted
-corpus a ResNet18 reaches 98.6 per cent balanced accuracy on held out speakers. The same
-weights, applied without retraining to human annotated audio at the same prior, reach 70.2
-per cent: specificity falls to 84.3 per cent while sensitivity falls to 56.0. The loss is
-one of discrimination, not calibration, the area under the curve falling from 0.998 to
-0.749, so moving the threshold recovers little of it. Sneezes are assigned to the cough
-class more often than coughs are, locating the failure in a negative class that holds no
-forced expirations. Wavelet shrinkage does not help, removing a median of 0.67 per cent
-of signal power. The external set is small and single source, so the fall is estimated
-less precisely in size than in direction.}
+\abstract{\input{01_abstract}}
 
-\keywords{Audio classification, External validation, Wavelet shrinkage, Respiratory sound
-analysis, Dataset bias}
+\keywords{\input{01_keywords}}
 
 \maketitle

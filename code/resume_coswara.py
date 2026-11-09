@@ -93,8 +93,10 @@ def main():
         say('start: %s' % label)
         subprocess.run(args, cwd=HERE)
 
-    subprocess.run([sys.executable, '-u', '-I', 'assemble.py', '--check'],
-                   cwd=ROOT)
+    for venue in ('ieee', 'springer'):
+        say('assembling the %s target' % venue)
+        subprocess.run([sys.executable, '-u', '-I', 'assemble.py',
+                        '--venue', venue, '--check'], cwd=ROOT)
     say('everything has run')
 
 

@@ -37,7 +37,7 @@ session, so a difference between classes cannot be explained by channel or speak
 ## Layout
 
     code/                      ingest, denoising, spectrograms, splits, training, analysis
-    manuscript/                manuscript sources, generated tables, figures, sn-jnl.cls
+    manuscript/                manuscript sources, generated tables, figures, class files
     runs_coswara/              per recording decisions from the prompt derived grid
     runs_fsd50k/               the same weights applied to human annotated audio
     runs_coughvid/             the classifier derived grid
@@ -77,13 +77,31 @@ than sampled for verification.
     python -I code/error_analysis.py  # what the false positives actually are
     python -I code/figures.py         # both figures, and the shrinkage audit
     python -I code/trace_numbers.py   # every quoted number back to a file
-    python -I assemble.py --check     # one .tex, then the structural checks
+    python -I assemble.py --venue ieee --check
+    python -I assemble.py --venue springer --check
 
-`assemble.py` writes `manuscript/paper.tex`, which is the single file the publisher asks
-for, expanding each generated table where its `\input` stands. The bibliography is
-generated from `references.bib` in citation order, so a reference is written down in
-exactly one place. `code/pagecount.py` estimates the built length, which is an estimate
-and says so: there is no TeX installation on the machine this was produced on.
+There are two targets and one body. `assemble.py --venue ieee` writes
+`manuscript/paper_ieee.tex` for IEEE Access and `--venue springer` writes
+`manuscript/paper.tex`, each the single file that publisher asks for, expanding each
+generated table where its `\input` stands. The section files carry no class specific
+markup, so a venue amounts to a title page, a closing set of statements, a reference
+style, and where the reference list sits. Where the two houses differ inside a sentence,
+as they do over whether a figure is a Figure or a Fig., the difference is a macro defined
+in the preamble rather than a second copy of the sentence.
+
+    python -I code/fetch_ieee_class.py   # before the first Access build
+
+The Access class is not on CTAN and is distributed only inside the journal's own template
+archive, along with IEEEtran and the licensed fonts it loads by name. Those are the
+publisher's files to distribute and not ours, so they are not in the repository and that
+script installs them from IEEE in one step.
+
+The bibliography is generated from `references.bib` in citation order, in whichever house
+style the venue uses, so a reference is written down in exactly one place.
+`code/pagecount.py --venue ...` estimates the built length, which is an estimate and says
+so: there is no TeX installation on the machine this was produced on. The two estimates
+differ by more than a constant, because a two column Access page carries roughly twice the
+prose of a single column Springer one.
 
 Every number in the manuscript comes from a file in `runs_*/` or `results/` by way of one
 of these scripts, rather than from arithmetic done while writing. Regenerating is the

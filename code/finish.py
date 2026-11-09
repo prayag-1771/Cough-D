@@ -107,8 +107,9 @@ def main():
     run(['error_analysis.py'], 'false positives by annotated class')
     run(['figures.py', '--what', 'transfer'], 'the transfer figure')
     run(['trace_numbers.py'], 'tracing every quoted number to a file')
-    run(['assemble.py', '--check'], 'assembling and checking the manuscript',
-        cwd=ROOT)
+    for venue in ('ieee', 'springer'):
+        run(['assemble.py', '--venue', venue, '--check'],
+            'assembling and checking the %s target' % venue, cwd=ROOT)
 
     say('all remaining stages have run')
 

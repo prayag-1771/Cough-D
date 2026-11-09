@@ -1,0 +1,18 @@
+Reported accuracies for automatic cough detection sit in the high nineties, yet audits find
+such models are rarely validated outside their development corpus and often separated by a
+confound. Which factor is responsible has not been isolated, because label provenance,
+negative class difficulty and seed variation ordinarily move together. This study fixes the
+preprocessing, architecture and training protocol, and varies only the provenance of the
+label. Three corpora are used, labelled respectively by a participant's instruction, by a
+human listener against an audio ontology, and by another classifier's score. The class
+prior is matched in all three, partitions are speaker disjoint wherever an identifier
+permits, every condition runs under five seeds, and conditions are compared by a paired
+test on per recording decisions. Within the prompted corpus a residual network reaches 98.6
+per cent balanced accuracy on held out speakers. The same weights, applied without
+retraining to human annotated audio at the same prior, reach 70.2 per cent: specificity
+falls to 84.3 per cent, sensitivity to 56.0. The loss is one of discrimination rather than
+calibration, the area under the curve falling from 0.998 to 0.749, so moving the threshold
+recovers little of it. Sneezes are called coughs more often than coughs are, locating the
+failure in a negative class holding no forced expirations. Wavelet shrinkage does not help,
+removing a median of 0.67 per cent of signal power. The external set is small and single
+source, so the fall is better established in direction than in size.

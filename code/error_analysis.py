@@ -129,7 +129,7 @@ def main():
     body.append('\\addlinespace')
     body.append('Cough, as recall & %d & %d & $%.1f$ \\\\'
                 % (pos[1], pos[0], 100.0 * pos[0] / pos[1]))
-    tail = ['\\botrule', '\\end{tabular}', '\\end{table}', '']
+    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table}', '']
     with io.open(os.path.join(MS, 'tab_confusion.tex'), 'w',
                  encoding='utf-8', newline='\n') as fh:
         fh.write('\n'.join(head + body + tail) + '\n')

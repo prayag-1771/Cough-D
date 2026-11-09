@@ -25,9 +25,9 @@ MS = os.path.join(ROOT, 'manuscript')
 RESULTS = os.path.join(ROOT, 'results')
 RBS = chr(92) * 2
 
-PROSE = ['01_front.tex', '01_intro.tex', '02_related.tex', '03_design.tex',
-         '04_setup.tex', '05_results.tex', '06_discussion.tex',
-         '07_conclusion.tex']
+PROSE = ['01_abstract.tex', '01_front.tex', '01_front_ieee.tex',
+         '01_intro.tex', '02_related.tex', '03_design.tex', '04_setup.tex',
+         '05_results.tex', '06_discussion.tex', '07_conclusion.tex']
 
 # Quantities that are part of the design rather than measurements of it, or
 # that are quoted from a cited paper and verified against it by hand.
@@ -48,7 +48,8 @@ KNOWN = {
 
 
 def numbers(text):
-    text = re.sub(RBS + r'(label|ref|eqref|cite[a-z]*|input)\s*'
+    text = re.sub(RBS + r'(label|[a-z]*ref|eqref|cite[a-z]*|input|doi|'
+                  r'history|markboth|address|authorrefmark)\s*'
                   r'(\[[^\]]*\])?\{[^{}]*\}', ' ', text)
     out = []
     for m in re.finditer(r'(?<![A-Za-z0-9.])(\d+(?:\{,\})?\d*(?:\.\d+)?)', text):

@@ -124,7 +124,7 @@ def check_floats(t, r):
             r'\\begin\{%s\*?\}.*?\\label\{([^}]*)\}' % kind, t, flags=re.S)
         # order of first reference in the body
         order, seen = [], set()
-        for m in re.finditer(r'\\ref\{([^}]*)\}', t):
+        for m in re.finditer(r'\\[a-z]*ref\{([^}]*)\}', t):
             k = m.group(1)
             if k in declared and k not in seen:
                 seen.add(k)
@@ -185,7 +185,7 @@ def check_prose(t, r):
     # Cross-reference keys are identifiers, not prose. They are hyphenated by
     # convention, and counting them buries the compound hyphens that are
     # really in the writing.
-    masked = re.sub(r'\\(label|ref|eqref|cite[a-z]*|input|include|url|'
+    masked = re.sub(r'\\(label|[a-z]*ref|eqref|cite[a-z]*|input|include|url|'
                     r'graphicspath|includegraphics)\s*(\[[^\]]*\])?\{[^{}]*\}',
                     ' ', masked)
     masked = re.sub(r'\\[a-zA-Z@]+', ' ', masked)        # commands
@@ -207,23 +207,34 @@ def check_prose(t, r):
         print('  no em dashes, no stray en dashes')
 
 
-def check_abstract(t, r):
+def check_abstract(t, r, limit=260):
     m = re.search(r'\\abstract\{', t)
-    if not m:
-        r.bad('abstract', 'no abstract found')
-        return
-    i, depth = m.end(), 1
-    while i < len(t) and depth:
-        if t[i] == '{':
-            depth += 1
-        elif t[i] == '}':
-            depth -= 1
-        i += 1
-    a = t[m.end():i - 1]
+    if m:
+        i, depth = m.end(), 1
+        while i < len(t) and depth:
+            if t[i] == '{':
+                depth += 1
+            elif t[i] == '}':
+                depth -= 1
+            i += 1
+        a = t[m.end():i - 1]
+    else:
+        # The Access class takes the abstract as an environment rather than
+        # as an argument, and enforces a hard upper limit on its length.
+        m = re.search(r'\\begin\{abstract\}(.*?)\\end\{abstract\}', t,
+                      flags=re.S)
+        if not m:
+            r.bad('abstract', 'no abstract found')
+            return
+        a = m.group(1)
     words = len(a.split())
-    print('  abstract words: %d' % words)
-    if words > 260:
-        r.soft('abstract', 'long at %d words' % words)
+    print('  abstract words: %d (limit %d)' % (words, limit))
+    if words > limit:
+        r.bad('abstract', 'over the limit at %d words, where %d is the '
+                          'maximum' % (words, limit))
+    elif words < 150:
+        r.bad('abstract', 'short at %d words, where 150 is the minimum'
+              % words)
     if '\\cite' in a:
         r.bad('abstract', 'contains a citation')
     if '\u2014' in a or '---' in a or re.search(r'\w\u2013\w', a):
@@ -269,12 +280,18 @@ def check_references(raw, r, minimum):
     print('  reference entries: %d (minimum %d)' % (n, minimum))
     if n and n < minimum:
         r.bad('references', 'only %d entries, %d required' % (n, minimum))
-    doi = len(re.findall(r'(?i)\bdoi\b|doi\.org', raw))
+    # The rule is that no reference carries an identifier, which is what a
+    # reader would have to resolve to check it. The Access class takes the
+    # article's own identifier as a title page field, and the publisher
+    # fills it at acceptance, so that one line is not a reference and is not
+    # counted against the rule.
+    scan = re.sub(r'\\doi\{[^{}]*\}', ' ', raw)
+    doi = len(re.findall(r'(?i)\bdoi\b|doi\.org', scan))
     if doi:
-        r.bad('references', '%d digital object identifier mention(s); none '
-                            'are permitted' % doi)
+        r.bad('references', '%d digital object identifier mention(s) outside '
+                            'the title page field; none are permitted' % doi)
     else:
-        print('  no digital object identifiers')
+        print('  no digital object identifiers in any reference')
 
 
 def main():
@@ -282,6 +299,8 @@ def main():
     ap.add_argument('tex')
     ap.add_argument('--min-refs', type=int, default=30)
     ap.add_argument('--min-pages', type=int, default=25)
+    ap.add_argument('--venue', choices=('springer', 'ieee'),
+                    default='springer')
     a = ap.parse_args()
 
     raw = open(a.tex, encoding='utf-8').read()
@@ -301,7 +320,7 @@ def main():
     r.section('Prose')
     check_prose(body, r)
     r.section('Abstract')
-    check_abstract(raw, r)
+    check_abstract(raw, r, 250 if a.venue == 'ieee' else 260)
     r.section('Cleanliness')
     check_clean(raw, r)
     r.section('References')
@@ -326,7 +345,12 @@ def main():
     print('  every reference read against its publisher or preprint page')
     print('  every number traced to the result file it came from')
     print('  every sentence that points at a float saying why to look at it')
-    print('  the built document read in order, at least %d pages' % a.min_pages)
+    if a.venue == 'ieee':
+        print('  the built document read in order, at a length the '
+              'work warrants')
+    else:
+        print('  the built document read in order, at least %d pages'
+              % a.min_pages)
     print('=' * 78)
     return 1 if r.fatal else 0
 

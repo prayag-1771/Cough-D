@@ -50,12 +50,14 @@ not help, and that where the effect reaches significance it is negative.
 \input{tab_paired}
 
 For ResNet18 on the linear axis, $66$ recordings are classified correctly without
-shrinkage and incorrectly with it, against $37$ in the reverse direction. The test rejects
-at an adjusted $p$ of $0.0166$, and the accuracy change across seeds is
+shrinkage and incorrectly with it, against $37$ in the reverse direction. McNemar's test
+on those discordant pairs gives $p = 0.0055$, which survives the step down correction over
+the family in Table~\ref{tab:paired}, and the accuracy change across seeds is
 $-0.29 \pm 0.19$ points. The effect is therefore real, small, and in the direction
 opposite to the one claimed for the method. On the mel axis the same comparison is
-indistinguishable from no effect, $71$ against $65$ discordant recordings at an adjusted
-$p$ of $0.668$. For the compact network on the mel axis the test rejects decisively, but
+indistinguishable from no effect, $71$ against $65$ discordant recordings and
+$p = 0.668$ before any correction. For the compact network on the mel axis the test rejects
+decisively, but
 the accuracy change is $-3.89 \pm 8.25$ points, and a spread four times the size of the
 effect is the degenerate seed discussed above rather than a property of shrinkage.
 
@@ -74,7 +76,7 @@ evidence that denoising cannot help audio that is genuinely noisy.
 The weights retained from the grid were applied, without retraining and without adaptation
 of any kind, to the exhaustively verified evaluation split of the human annotated corpus
 at the same class prior. Table~\ref{tab:external} gives the result and
-Figure~\ref{fig:transfer} plots it against the in corpus figure for the same weights.
+\figref{fig:transfer} plots it against the in corpus figure for the same weights.
 
 \input{tab_external}
 
