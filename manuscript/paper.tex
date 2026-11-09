@@ -809,8 +809,10 @@ ResNet18 & linear & 5 & $99.09 \pm 0.13$ & $97.72 \pm 0.62$ & $99.48 \pm 0.26$ &
  & mel & 5 & $98.71 \pm 0.20$ & $97.19 \pm 0.81$ & $99.14 \pm 0.10$ & $0.963 \pm 0.006$ \\
  & wav+mel & 5 & $98.65 \pm 0.49$ & $97.37 \pm 0.53$ & $99.02 \pm 0.74$ & $0.961 \pm 0.014$ \\
 \addlinespace
-MobileNetV2 & mel & 5 & $98.86 \pm 0.33$ & $98.35 \pm 0.34$ & $99.00 \pm 0.49$ & $0.967 \pm 0.009$ \\
- & wav+mel & 4 & $98.96 \pm 0.24$ & $97.88 \pm 0.39$ & $99.27 \pm 0.32$ & $0.970 \pm 0.007$ \\
+MobileNetV2 & linear & 5 & $99.10 \pm 0.12$ & $97.68 \pm 0.97$ & $99.50 \pm 0.28$ & $0.974 \pm 0.003$ \\
+ & wav+linear & 1 & $99.06 \pm 0.00$ & $96.88 \pm 0.00$ & $99.68 \pm 0.00$ & $0.973 \pm 0.000$ \\
+ & mel & 5 & $98.86 \pm 0.33$ & $98.35 \pm 0.34$ & $99.00 \pm 0.49$ & $0.967 \pm 0.009$ \\
+ & wav+mel & 5 & $98.91 \pm 0.23$ & $97.50 \pm 0.91$ & $99.31 \pm 0.30$ & $0.968 \pm 0.007$ \\
 \addlinespace
 Compact & linear & 5 & $96.43 \pm 0.38$ & $93.35 \pm 1.60$ & $97.31 \pm 0.74$ & $0.898 \pm 0.010$ \\
  & mel & 5 & $96.46 \pm 0.34$ & $92.46 \pm 2.24$ & $97.60 \pm 0.83$ & $0.898 \pm 0.009$ \\
@@ -851,8 +853,8 @@ not help, and that where the effect reaches significance it is negative.
 Architecture & Comparison & Seeds & $b$ & $c$ & $p$ & $p$ adj.\ & Accuracy change \\
 \midrule
 ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0166$ & $-0.29 \pm 0.19$ \\
-ResNet18 & mel $\rightarrow$ wav+mel & 5 & 71 & 65 & $0.668$ & $0.668$ & $-0.06 \pm 0.39$ \\
-MobileNetV2 & mel $\rightarrow$ wav+mel & 4 & 37 & 51 & $0.165$ & $0.331$ & $+0.17 \pm 0.34$ \\
+ResNet18 & mel $\rightarrow$ wav+mel & 5 & 71 & 65 & $0.668$ & $1.000$ & $-0.06 \pm 0.39$ \\
+MobileNetV2 & mel $\rightarrow$ wav+mel & 5 & 53 & 58 & $0.704$ & $1.000$ & $+0.05 \pm 0.40$ \\
 Compact & mel $\rightarrow$ wav+mel & 5 & 525 & 133 & $<10^{-4}$ & $<10^{-4}$ & $-3.89 \pm 8.25$ \\
 \botrule
 \end{tabular}
@@ -896,6 +898,10 @@ ResNet18 & linear & 5 & $78.03 \pm 1.62$ & $56.04 \pm 4.04$ & $84.32 \pm 3.24$ &
  & wav+linear & 5 & $79.33 \pm 1.19$ & $53.21 \pm 1.27$ & $86.81 \pm 1.65$ & $0.402 \pm 0.022$ \\
  & mel & 5 & $78.70 \pm 2.31$ & $57.55 \pm 3.89$ & $84.76 \pm 3.88$ & $0.411 \pm 0.031$ \\
  & wav+mel & 5 & $77.56 \pm 3.18$ & $59.62 \pm 2.78$ & $82.70 \pm 4.34$ & $0.401 \pm 0.056$ \\
+\addlinespace
+MobileNetV2 & linear & 2 & $76.26 \pm 2.08$ & $62.74 \pm 2.00$ & $80.14 \pm 3.25$ & $0.392 \pm 0.023$ \\
+ & mel & 5 & $74.92 \pm 3.98$ & $66.04 \pm 4.11$ & $77.46 \pm 5.97$ & $0.392 \pm 0.054$ \\
+ & wav+mel & 5 & $77.65 \pm 3.00$ & $57.92 \pm 4.30$ & $83.30 \pm 4.89$ & $0.396 \pm 0.038$ \\
 \addlinespace
 Compact & linear & 5 & $68.11 \pm 1.55$ & $45.66 \pm 4.88$ & $74.54 \pm 3.26$ & $0.184 \pm 0.015$ \\
  & mel & 5 & $73.36 \pm 5.67$ & $38.49 \pm 9.70$ & $83.35 \pm 10.00$ & $0.235 \pm 0.049$ \\
@@ -948,6 +954,10 @@ ResNet18 & linear & $0.998 \pm 0.002$ & $0.749 \pm 0.018$ & $70.18 \pm 0.44$ & $
  & wav+linear & $0.998 \pm 0.001$ & $0.730 \pm 0.007$ & $70.01 \pm 0.81$ & $71.13 \pm 0.52$ \\
  & mel & $0.999 \pm 0.000$ & $0.768 \pm 0.016$ & $71.15 \pm 1.01$ & $72.34 \pm 1.68$ \\
  & wav+mel & $0.998 \pm 0.001$ & $0.754 \pm 0.024$ & $71.16 \pm 2.08$ & $72.31 \pm 1.35$ \\
+\addlinespace
+MobileNetV2 & linear & $0.998 \pm 0.000$ & $0.769 \pm 0.005$ & $71.44 \pm 0.62$ & $72.86 \pm 0.05$ \\
+ & mel & $0.998 \pm 0.000$ & $0.766 \pm 0.025$ & $71.75 \pm 1.93$ & $72.90 \pm 1.62$ \\
+ & wav+mel & $0.998 \pm 0.001$ & $0.748 \pm 0.023$ & $70.61 \pm 1.17$ & $71.64 \pm 1.65$ \\
 \addlinespace
 Compact & linear & $0.992 \pm 0.001$ & $0.648 \pm 0.012$ & $60.10 \pm 1.06$ & $62.23 \pm 1.59$ \\
  & mel & $0.993 \pm 0.000$ & $0.687 \pm 0.017$ & $60.92 \pm 1.01$ & $64.36 \pm 1.58$ \\
@@ -1042,6 +1052,49 @@ kind. A model trained and tested on labels thresholded from a detector score is 
 its agreement with that detector. A high figure there is evidence that two classifiers
 agree, which is not evidence that a cough is present, and no amount of care in the
 partitioning changes what is being measured.
+
+At the matched prior this corpus supplies $8398$ recordings, of which $1880$ carry a cough
+label, and its test partition holds $1259$ of them. Within that regime a ResNet18 reaches
+$98.41 \pm 0.24$ per cent balanced accuracy on linear spectrograms, against $98.60 \pm
+0.22$ on the prompt derived corpus under the same architecture and the same input
+condition. Table~\ref{tab:regime} gives the four conditions. The resemblance between those
+two figures is the most instructive thing about them: a reader given only the headline
+number could not tell which of the two experiments produced it, although one measures
+recovery of a prompted behaviour from held out speakers and the other measures agreement
+with a detector. Nothing in the quantity itself marks the difference, which is why the
+regime is named in the caption rather than left to be inferred from the corpus name.
+
+\begin{table}[htbp]
+\caption{Detection on the classifier derived corpus at a matched class prior. What is measured here is agreement with the detector that produced the labels, not whether a cough is present, and the figures should be read as a property of that regime.}\label{tab:regime}
+\small
+\begin{tabular}{@{}llrcccc@{}}
+\toprule
+Architecture & Input & Seeds & Accuracy & Sensitivity & Specificity & MCC \\
+\midrule
+ResNet18 & linear & 5 & $98.94 \pm 0.14$ & $97.45 \pm 0.68$ & $99.37 \pm 0.29$ & $0.969 \pm 0.004$ \\
+ & wav+linear & 5 & $98.25 \pm 0.51$ & $97.87 \pm 1.00$ & $98.36 \pm 0.85$ & $0.951 \pm 0.013$ \\
+ & mel & 5 & $98.57 \pm 0.32$ & $98.09 \pm 1.05$ & $98.71 \pm 0.52$ & $0.960 \pm 0.009$ \\
+ & wav+mel & 5 & $98.60 \pm 0.25$ & $97.38 \pm 0.48$ & $98.96 \pm 0.36$ & $0.960 \pm 0.007$ \\
+\botrule
+\end{tabular}
+\end{table}
+
+The paired test behaves on this corpus much as it does on the other. Shrinkage applied
+before a linear spectrogram costs $0.68 \pm 0.38$ accuracy points, with $79$ recordings
+lost against $36$ gained and an adjusted $p$ of $0.0002$; applied before a mel spectrogram
+it changes nothing measurable, $51$ against $53$ and $p = 0.922$. The direction agrees
+with the prompt derived corpus in both pairs and the magnitude is larger in the first,
+which is consistent with shrinkage removing detail that the linear axis still resolves and
+the mel axis has already averaged together. What a loss of agreement means here needs
+stating, though. These labels were assigned to the recordings as distributed rather than to
+shrunk versions of them, so a processing step that moves a model away from those labels has
+not thereby been shown to move it away from the coughs.
+
+This corpus also cannot support the partitioning the other two receive. It distributes no
+participant identifier, so recordings contributed by one person cannot be kept to one side
+of a split, and the figures in Table~\ref{tab:regime} are accordingly not protected against
+a contributor appearing in both training and test. That is a second reason, independent of
+the labels, to read them as a property of the regime rather than as a detection result.
 
 Two properties of the corpus bound what can be done with it, and both are settled from the
 published metadata without reference to any model. The first concerns reproducing the

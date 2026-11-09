@@ -3,8 +3,11 @@
 # Every one of them is reproducible from the ingest scripts in code/.
 data/
 
-# Selected network weights. Roughly 45 MB per run.
+# Selected network weights. Roughly 45 MB per run. The second grid keeps its
+# own directory because both grids name a run by architecture, condition and
+# seed, so one directory would have the second corpus overwrite the first.
 weights/
+weights_coughvid/
 
 # Decoded image caches written beside the image sets.
 *.npz

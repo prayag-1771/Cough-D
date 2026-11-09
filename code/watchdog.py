@@ -34,7 +34,7 @@ STALL_CHECKS = 2           # consecutive unchanged checks before calling a stall
 
 # name, log file, process command line fragment, completion marker, progress probe
 JOBS = [
-    ('sweep', 'sweep*.out', 'sweep.py', 'SWEEP COMPLETE',
+    ('sweep', 'sweep*.out|resume.out', 'sweep.py', 'SWEEP COMPLETE',
      ('csv', os.path.join(ROOT, 'runs_coswara'), '.csv', 66)),
     ('coughvid', 'coughvid*.out', 'coughvid_ingest', 'imaged ',
      ('png', os.path.join(ROOT, 'data', 'coughvid_img', 'linear'), '.png', 8435)),
@@ -48,9 +48,16 @@ def newest_log(pattern):
 
     A job that has to be relaunched writes to a new log, so the watcher
     resolves the pattern each time rather than holding a fixed name. Watching
-    a stale log would report a healthy job as stalled.
+    a stale log would report a healthy job as stalled, which is exactly what
+    happened when the grid was restarted under a name the pattern did not
+    cover: the count of finished runs kept climbing while the watcher reported
+    a stall against a log nothing was writing to any more. Several patterns
+    separated by a bar are therefore accepted, and the newest file across all
+    of them wins.
     """
-    paths = glob.glob(os.path.join(LOGS, pattern))
+    paths = []
+    for part in pattern.split('|'):
+        paths.extend(glob.glob(os.path.join(LOGS, part)))
     return max(paths, key=os.path.getmtime) if paths else None
 
 

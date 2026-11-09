@@ -103,11 +103,17 @@ def table(data, label, caption):
     return '\n'.join(head + body + tail) + '\n'
 
 
-def paired_table(root, label, caption):
-    """McNemar over the denoising pairs, pooled across seeds, Holm adjusted."""
+def paired_rows(root):
+    """McNemar over the denoising pairs, pooled across seeds, Holm adjusted.
+
+    Returned separately from the table it formats, because two corpora are
+    tested this way and only one of them is tabulated. The other is quoted in
+    the prose, and a quoted number has to come from a file like any other, so
+    both sets of rows are written to a CSV as well.
+    """
     data = {}
     if not os.path.isdir(root):
-        return None
+        return None, None
     for fn in sorted(os.listdir(root)):
         if not fn.endswith('.csv'):
             continue
@@ -148,11 +154,19 @@ def paired_table(root, label, caption):
                         A.mcnemar(b_tot, c_tot)[1], deltas))
 
     if not raw:
-        return None
+        return None, None
     # holm returns (label, raw p, adjusted p) ordered by raw p, so it is keyed
     # back onto the rows rather than zipped against them.
     adj = {lab: a for lab, _p, a in
            A.holm([(r[0] + r[1] + r[2], r[6]) for r in raw])}
+    return raw, adj
+
+
+def paired_table(root, label, caption):
+    """Format one corpus' paired comparisons as a table."""
+    raw, adj = paired_rows(root)
+    if not raw:
+        return None
 
     body = []
     for r in raw:
@@ -301,11 +315,41 @@ def write_corpora():
     print('  wrote results/corpora.csv (%d corpora)' % len(rows))
 
 
+def write_paired():
+    """The paired denoising tests for every corpus that has both conditions.
+
+    The Holm correction is applied within a corpus and not across corpora,
+    because the family of hypotheses being tested is the set of comparisons
+    made on that corpus. Pooling the two would adjust each corpus' claims for
+    tests performed on different data, which is not what the correction is for.
+    """
+    out = os.path.join(ROOT, 'results', 'paired.csv')
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    rows = []
+    for name, rel in (('coswara', 'runs_coswara'),
+                      ('coughvid', 'runs_coughvid')):
+        raw, adj = paired_rows(os.path.join(ROOT, rel))
+        if not raw:
+            continue
+        for arch, base, dn, used, b, c, p, deltas in raw:
+            d_m, d_s = A.mean_sd(deltas)
+            rows.append([name, arch, base, dn, used, b, c,
+                         '%.6g' % p, '%.6g' % adj[arch + base + dn],
+                         '%+.2f' % d_m, '%.2f' % d_s])
+    with open(out, 'w', newline='', encoding='utf-8') as fh:
+        w = csv.writer(fh)
+        w.writerow(['corpus', 'arch', 'base', 'denoised', 'seeds', 'b', 'c',
+                    'p', 'p_adjusted', 'accuracy_change', 'change_sd'])
+        w.writerows(rows)
+    print('  wrote results/paired.csv (%d comparisons)' % len(rows))
+
+
 def main():
     os.makedirs(MS, exist_ok=True)
     write_per_seed()
     write_summary()
     write_corpora()
+    write_paired()
 
     write('tab_grid.tex', table(
         collect(os.path.join(ROOT, 'runs_coswara')), 'tab:grid',
