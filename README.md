@@ -36,17 +36,22 @@ session, so a difference between classes cannot be explained by channel or speak
 
 ## Layout
 
-    code/      pipeline: ingest, denoising, spectrograms, splits, training, analysis
-    figs/      figures used in the manuscript
-    runs_coswara/   per recording decisions, one CSV per architecture, condition and seed
-    *.tex      manuscript sources
+    code/                      ingest, denoising, spectrograms, splits, training, analysis
+    manuscript/                manuscript sources, generated tables, figures, sn-jnl.cls
+    runs_coswara/              per recording decisions from the prompt derived grid
+    runs_fsd50k/               the same weights applied to human annotated audio
+    runs_coughvid/             the classifier derived grid
+    results/                   measurements the manuscript quotes that are not runs
     references.bib             bibliography, the single source of truth for citations
     references_provenance.md   the page each bibliography field was read from
     PAPER_SPEC.md              formatting and integrity rules the manuscript follows
+    assemble.py                joins the sections into one .tex and checks it
     check_paper.py             structural checks on the manuscript
 
 Corpora, trained weights and decoded image caches are not in the repository. All of them
-are rebuilt by the ingest scripts from the original sources.
+are rebuilt by the ingest scripts from the original sources. One CSV per architecture,
+condition and seed is kept, because those rows and not any summary of them are what the
+tables and figures are computed from.
 
 ## Pipeline
 
@@ -55,10 +60,44 @@ are rebuilt by the ingest scripts from the original sources.
     python -I sweep.py            --images ../data/coswara_img --out ../runs_coswara
     python -I analyse.py          ../runs_coswara
 
-`vocalsound_ingest.py` and `fsd50k_ingest.py` build the external validation sets, and
-`coughvid_ingest.py` builds the classifier-labelled arm. `queue_runner.py` holds the
-heavy jobs until the machine is free and splits them into a graphics card lane and a
-processor lane.
+`fsd50k_ingest.py` builds the external validation set and `coughvid_ingest.py` the
+classifier labelled arm. `external_eval.py` applies saved weights to a corpus they were
+never trained on. `finish.py` chains whatever remains and skips any stage whose output
+already exists, which is what makes an interrupted run cheap to resume.
+
+`vocalsound_ingest.py` is retained but does not work: every form of its distribution link
+returned a page rather than the audio at the time of writing. FSD50K replaced it, and is
+the better choice anyway, since its evaluation split was exhaustively verified rather
+than sampled for verification.
+
+## Building the manuscript
+
+    python -I code/tables.py          # result tables, from the decision files
+    python -I code/threshold.py       # discrimination against calibration
+    python -I code/error_analysis.py  # what the false positives actually are
+    python -I code/figures.py         # both figures, and the shrinkage audit
+    python -I assemble.py --check     # one .tex, then the structural checks
+
+`assemble.py` writes `manuscript/paper.tex`, which is the single file the publisher asks
+for, expanding each generated table where its `\input` stands. The bibliography is
+generated from `references.bib` in citation order, so a reference is written down in
+exactly one place. `code/pagecount.py` estimates the built length, which is an estimate
+and says so: there is no TeX installation on the machine this was produced on.
+
+Every number in the manuscript comes from a file in `runs_*/` or `results/` by way of one
+of these scripts, rather than from arithmetic done while writing. Regenerating is the
+only way to change a table.
+
+## What the study found
+
+A ResNet18 reaches 98.6 per cent balanced accuracy on held out speakers within the
+prompted corpus and 70.2 per cent on human annotated audio at the same class prior, with
+no retraining in between. The loss falls almost entirely on sensitivity, which drops from
+97.7 to 56.0 per cent. It is a loss of discrimination rather than of calibration, so
+moving the decision threshold recovers little of it, and the false positives concentrate
+on the other forced expirations: clips annotated as sneezes are called coughs more often
+than coughs themselves are. Wavelet shrinkage changes none of this, and removes a median
+of 0.67 per cent of signal power from recordings of this quality.
 
 Each module's docstring states what it does and, where a choice was made that could have
 gone another way, why it went the way it did. Two are worth reading before trusting any
