@@ -428,7 +428,7 @@ reported, because it bounds what the comparison can show. Whatever the shrinkage
 recordings of this kind, it does very little of it, and the two input conditions that
 follow from it are very nearly the same images.
 
-\begin{figure}[htbp]
+\begin{figure*}[tbp]
 \centering
 \includegraphics[width=\textwidth]{denoise.pdf}
 \caption{What the universal threshold removes from one cough and one non-cough recording,
@@ -438,7 +438,7 @@ the component the shrinkage discarded, on its own vertical scale: at the scale o
 signal it would be indistinguishable from zero, so the magnification is stated on the
 panel. What is removed is a low level broadband residual rather than any part of the
 event itself.}\label{fig:denoise}
-\end{figure}
+\end{figure*}
 
 \subsection{Spectrogram formation and the frequency axis}\label{sec:design-spectro}
 
@@ -511,7 +511,7 @@ consist of in each, and how the label was arrived at. The distinction is the org
 idea of the study, so it is worth stating plainly what each regime does and does not
 establish.
 
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \caption{The three corpora, the way the cough label was arrived at in each, and what the
 two classes consist of. Every count is taken from the partition manifest the ingest
 scripts write, not from the figures quoted by the corpus authors. The priors are matched
@@ -520,16 +520,16 @@ change in class balance.}\label{tab:corpora}
 \small
 \begin{tabular}{@{}lp{20mm}p{26mm}p{30mm}rrc@{}}
 \toprule
-Corpus & Label from & Positive class & Negative class & Recs. & Prior & Spk.\ ids \
+Corpus & Label from & Positive class & Negative class & Recs. & Prior & Spk.\ ids \\
 \midrule
 Coswara & a prompt & the two cough tasks, heavy and shallow & breathing, sustained vowel
-  and counting tasks & $13{,}314$ & $0.2228$ & yes \
+  and counting tasks & $13{,}314$ & $0.2228$ & yes \\
 \addlinespace
 FSD50K eval & a person & the \textsf{Cough} label & breathing, sneeze, gasp, sigh,
-  laughter, speech & $476$ & $0.2227$ & no \
+  laughter, speech & $476$ & $0.2227$ & no \\
 \addlinespace
 COUGHVID v3 & a detector & \texttt{cough\_detected} $\geq 0.9$ &
-  \texttt{cough\_detected} $\leq 0.1$ & $8{,}398$ & $0.2239$ & no \
+  \texttt{cough\_detected} $\leq 0.1$ & $8{,}398$ & $0.2239$ & no \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -667,18 +667,18 @@ text.}\label{tab:training}
 \small
 \begin{tabular}{@{}lp{62mm}@{}}
 \toprule
-Setting & Value \
+Setting & Value \\
 \midrule
-Optimiser & Adam, learning rate $10^{-4}$ \
-Gradient clipping & unit norm \
-Epochs & at most $8$ \
-Early stopping & no gain in validation balanced accuracy for $3$ epochs \
-Weights retained & those of the best validation balanced accuracy epoch \
-Test reads per run & one, after selection \
-Precision & single \
-Input & $224 \times 224$, normalised by ImageNet channel statistics \
-Batch size & $64$ ResNet18, $16$ MobileNetV2, $128$ compact, $8$ DenseNet201 \
-Seeds & five, and three for DenseNet201 \
+Optimiser & Adam, learning rate $10^{-4}$ \\
+Gradient clipping & unit norm \\
+Epochs & at most $8$ \\
+Early stopping & no gain in validation balanced accuracy for $3$ epochs \\
+Weights retained & those of the best validation balanced accuracy epoch \\
+Test reads per run & one, after selection \\
+Precision & single \\
+Input & $224 \times 224$, normalised by ImageNet channel statistics \\
+Batch size & $64$ ResNet18, $16$ MobileNetV2, $128$ compact, $8$ DenseNet201 \\
+Seeds & five, and three for DenseNet201 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -692,22 +692,22 @@ address the cause.}\label{tab:throughput}
 \small
 \begin{tabular}{@{}llrrr@{}}
 \toprule
-Architecture & Layout & Batch & Images/s & Peak MiB \
+Architecture & Layout & Batch & Images/s & Peak MiB \\
 \midrule
-ResNet18 & contiguous & $64$ & $208.1$ & $2898$ \
+ResNet18 & contiguous & $64$ & $208.1$ & $2898$ \\
 \addlinespace
-MobileNetV2 & contiguous & $64$ & $23.2$ & $5450$ \
-MobileNetV2 & contiguous & $32$ & $148.4$ & $3222$ \
-MobileNetV2 & contiguous & $16$ & $147.6$ & $2228$ \
-MobileNetV2 & channels last & $32$ & $13.2$ & $3254$ \
-MobileNetV2 & channels last & $16$ & $14.8$ & $2238$ \
+MobileNetV2 & contiguous & $64$ & $23.2$ & $5450$ \\
+MobileNetV2 & contiguous & $32$ & $148.4$ & $3222$ \\
+MobileNetV2 & contiguous & $16$ & $147.6$ & $2228$ \\
+MobileNetV2 & channels last & $32$ & $13.2$ & $3254$ \\
+MobileNetV2 & channels last & $16$ & $14.8$ & $2238$ \\
 \addlinespace
-Compact & contiguous & $128$ & $967.1$ & $3098$ \
-Compact & contiguous & $64$ & $912.6$ & $1608$ \
+Compact & contiguous & $128$ & $967.1$ & $3098$ \\
+Compact & contiguous & $64$ & $912.6$ & $1608$ \\
 \addlinespace
-DenseNet201 & contiguous & $32$ & $1.6$ & $7372$ \
-DenseNet201 & contiguous & $12$ & $33.6$ & $3070$ \
-DenseNet201 & contiguous & $8$ & $29.8$ & $2284$ \
+DenseNet201 & contiguous & $32$ & $1.6$ & $7372$ \\
+DenseNet201 & contiguous & $12$ & $33.6$ & $3070$ \\
+DenseNet201 & contiguous & $8$ & $29.8$ & $2284$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -926,7 +926,7 @@ seven coughs in a hundred within the corpus it was fitted to recovers barely mor
 half of them once the recordings, the microphones, the annotators and the definition of
 the negative class all change together.
 
-\begin{figure}[htbp]
+\begin{figure*}[tbp]
 \centering
 \includegraphics[width=0.74\textwidth]{transfer.pdf}
 \caption{Balanced accuracy within the prompt derived corpus against balanced accuracy for
@@ -936,7 +936,7 @@ The four input conditions are plotted for each architecture and are not labelled
 separately, because they fall on top of one another: the choice of frequency axis and the
 presence or absence of shrinkage move the result by far less than the change of corpus
 does.}\label{fig:transfer}
-\end{figure}
+\end{figure*}
 
 A fall of this size has two possible causes that call for quite different responses, and
 they can be told apart. The networks may have stopped ranking coughs above non-coughs, in

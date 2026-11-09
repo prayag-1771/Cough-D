@@ -132,10 +132,15 @@ def main():
           % (os.path.relpath(out, ROOT), len(chunks), words))
 
     if a.check:
+        # Token level first. If a row is unterminated or a delimiter does not
+        # balance, the document will not build at all, and there is no point
+        # reporting on its structure until it does.
+        tok = subprocess.run([sys.executable, '-I',
+                              os.path.join(ROOT, 'code', 'check_tex.py'), out])
         r = subprocess.run([sys.executable, '-I',
                             os.path.join(ROOT, 'check_paper.py'), out,
                             '--venue', a.venue])
-        return r.returncode
+        return r.returncode or tok.returncode
     return 0
 
 
