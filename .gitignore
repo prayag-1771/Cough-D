@@ -67,3 +67,9 @@ __pycache__/
 
 # MATLAB listing lifted from the source assignment. Another author's code.
 code_extracted.txt
+
+# Archives built for upload. They carry the Access class, its fonts and the
+# IEEE logos, which are the publisher's to distribute and are ignored above,
+# so the archive holding them is ignored too. Rebuild with
+# code/overleaf_bundle.py.
+overleaf/
