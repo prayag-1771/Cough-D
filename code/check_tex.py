@@ -84,6 +84,34 @@ def check_bare_commands(path, text, out):
                        % (path, line, name))
 
 
+def check_float_envs(path, text, out):
+    """A starred float has to be closed by a starred end.
+
+    This is the one error here that LaTeX reports in full and that nothing in
+    this repository could see: a table opened as table* and closed as table
+    stops the build, and a check that counts braces cannot notice, because
+    the braces balance perfectly. It happened when four tables were widened
+    for the two column class and one of them had its begin starred without
+    its end.
+    """
+    stack = []
+    for m in re.finditer(BS * 2 + r'(begin|end)\{(table|figure)(\*?)\}', text):
+        kind, env, star = m.group(1), m.group(2), m.group(3)
+        line = text.count(chr(10), 0, m.start()) + 1
+        if kind == 'begin':
+            stack.append((env + star, line))
+        elif not stack:
+            out.append('%s:%d: end{%s%s} closes nothing'
+                       % (path, line, env, star))
+        else:
+            want, opened = stack.pop()
+            if want != env + star:
+                out.append('%s:%d: begin{%s} on line %d is closed by '
+                           'end{%s%s}' % (path, line, want, opened, env, star))
+    for want, opened in stack:
+        out.append('%s:%d: begin{%s} is never closed' % (path, opened, want))
+
+
 def check_rows(path, text, out):
     """Every row of a tabular has to end in a row terminator."""
     depth = 0
@@ -133,11 +161,13 @@ def main():
         check_delimiters(name, text, out)
         check_bare_commands(name, text, out)
         check_rows(name, text, out)
+        check_float_envs(name, text, out)
 
     print('checked %d file(s) for token level damage' % len(paths))
     if not out:
-        print('delimiters balance, every row is terminated, and no command '
-              'has lost its backslash')
+        print('delimiters balance, every float is closed by its own end, '
+              'every row is terminated, and no command has lost its '
+              'backslash')
         return 0
     print('%d problem(s):' % len(out))
     for line in out:

@@ -87,7 +87,7 @@ def wanted(venue):
                 break
 
     if v['fonts']:
-        for pat in ('*.map', '*.pfb', '*.tfm'):
+        for pat in ('*.fd', '*.map', '*.pfb', '*.tfm'):
             files += [os.path.basename(p)
                       for p in sorted(glob.glob(os.path.join(MS, pat)))]
 

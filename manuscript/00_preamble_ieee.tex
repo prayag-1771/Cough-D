@@ -14,10 +14,4 @@
 \newcommand{\figref}[1]{Fig.~\ref{#1}}
 \newcommand{\parstart}[2]{\PARstart{#1}{#2}}
 
-\newcommand{\authorbio}[3]{%
-  \IfFileExists{figs/#1}{%
-    \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,%
-      clip,keepaspectratio]{#1}}]{#2}#3\end{IEEEbiography}}{%
-    \begin{IEEEbiographynophoto}{#2}#3\end{IEEEbiographynophoto}}}
-
 \begin{document}
