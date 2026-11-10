@@ -40,7 +40,8 @@ COMMANDS = (
     'documentclass', 'usepackage', 'newcommand', 'bibitem', 'thebibliography',
     'authorrefmark', 'tfootnote', 'markboth', 'corresp', 'titlepgskip',
     'PARstart', 'uppercase', 'orgdiv', 'orgname', 'orgaddress', 'affil',
-    'keywords', 'backmatter', 'figref', 'parstart',
+    'keywords', 'backmatter', 'figref', 'parstart', 'authorbio',
+    'IfFileExists', 'IEEEbiography', 'IEEEbiographynophoto', 'EOD',
 )
 
 # Environments whose body is made of rows that must each be terminated.
