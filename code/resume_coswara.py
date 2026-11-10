@@ -80,18 +80,25 @@ def main():
          '--plan', 'rest'], cwd=HERE)
     say('prompt derived grid exited with %d' % r.returncode)
 
-    for script, label in (('external_eval.py', 'external evaluation'),
-                          ('tables.py', 'result tables'),
-                          ('threshold.py', 'discrimination against calibration'),
-                          ('error_analysis.py', 'false positives by class'),
-                          ('trace_numbers.py', 'tracing quoted numbers')):
-        args = [sys.executable, '-u', '-I', script]
-        if script == 'external_eval.py':
-            args += ['--weights', os.path.join('..', 'weights'),
-                     '--images', os.path.join('..', 'data', 'fsd50k_img'),
-                     '--out', os.path.join('..', 'runs_fsd50k')]
+    # The transfer figure is drawn from the same decision files as the tables,
+    # so it has to be redrawn here as well. An architecture that finishes late
+    # adds a series to it, and omitting the step would leave the figure
+    # describing a grid that is no longer the one the tables report.
+    stages = (
+        ('external_eval.py',
+         ['--weights', os.path.join('..', 'weights'),
+          '--images', os.path.join('..', 'data', 'fsd50k_img'),
+          '--out', os.path.join('..', 'runs_fsd50k')],
+         'external evaluation'),
+        ('tables.py', [], 'result tables'),
+        ('threshold.py', [], 'discrimination against calibration'),
+        ('error_analysis.py', [], 'false positives by class'),
+        ('figures.py', ['--what', 'transfer'], 'the transfer figure'),
+        ('trace_numbers.py', [], 'tracing quoted numbers'),
+    )
+    for script, extra, label in stages:
         say('start: %s' % label)
-        subprocess.run(args, cwd=HERE)
+        subprocess.run([sys.executable, '-u', '-I', script] + extra, cwd=HERE)
 
     for venue in ('ieee', 'springer'):
         say('assembling the %s target' % venue)
