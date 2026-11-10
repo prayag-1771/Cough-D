@@ -51,6 +51,11 @@ def numbers(text):
     text = re.sub(RBS + r'(label|[a-z]*ref|eqref|cite[a-z]*|input|doi|'
                   r'history|markboth|address|authorrefmark)\s*'
                   r'(\[[^\]]*\])?\{[^{}]*\}', ' ', text)
+    # A length is a piece of page layout, not a quantity the work measured,
+    # so the fractions in a column specification are not numbers to trace.
+    text = re.sub(r'[0-9.]+' + RBS + r'(?:text|column|line)width', ' ', text)
+    text = re.sub(RBS + r'begin\{tabular\*?\}\{(?:[^{}]|\{[^{}]*\})*\}',
+                  ' ', text)
     out = []
     for m in re.finditer(r'(?<![A-Za-z0-9.])(\d+(?:\{,\})?\d*(?:\.\d+)?)', text):
         out.append(m.group(1).replace('{,}', ''))

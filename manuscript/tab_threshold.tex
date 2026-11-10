@@ -1,4 +1,4 @@
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \caption{Discrimination against calibration on the external set. The area under the curve depends only on the ordering of the scores, so a value that holds up while balanced accuracy falls indicates that the ranking survived and the inherited threshold did not. The final column is the balanced accuracy attainable at the best threshold for this set. That threshold is chosen on the same recordings it is scored on, so the column is an upper bound on what recalibration could recover and not an operating point anyone could reach in advance.}\label{tab:threshold}
 \small
 \begin{tabular}{@{}llcccc@{}}
@@ -12,14 +12,19 @@ ResNet18 & linear & $0.998 \pm 0.002$ & $0.749 \pm 0.018$ & $70.18 \pm 0.44$ & $
  & mel & $0.999 \pm 0.000$ & $0.768 \pm 0.016$ & $71.15 \pm 1.01$ & $72.34 \pm 1.68$ \\
  & wav+mel & $0.998 \pm 0.001$ & $0.754 \pm 0.024$ & $71.16 \pm 2.08$ & $72.31 \pm 1.35$ \\
 \addlinespace
-MobileNetV2 & linear & $0.998 \pm 0.000$ & $0.769 \pm 0.005$ & $71.44 \pm 0.62$ & $72.86 \pm 0.05$ \\
+MobileNetV2 & linear & $0.998 \pm 0.000$ & $0.768 \pm 0.007$ & $71.88 \pm 1.25$ & $73.30 \pm 0.73$ \\
+ & wav+linear & $0.998 \pm 0.001$ & $0.739 \pm 0.014$ & $69.05 \pm 1.45$ & $70.61 \pm 1.95$ \\
  & mel & $0.998 \pm 0.000$ & $0.766 \pm 0.025$ & $71.75 \pm 1.93$ & $72.90 \pm 1.62$ \\
  & wav+mel & $0.998 \pm 0.001$ & $0.748 \pm 0.023$ & $70.61 \pm 1.17$ & $71.64 \pm 1.65$ \\
 \addlinespace
+DenseNet201 & mel & $0.998 \pm 0.001$ & $0.767 \pm 0.022$ & $71.57 \pm 0.96$ & $72.96 \pm 0.93$ \\
+ & wav+mel & $0.998 \pm 0.002$ & $0.736 \pm 0.021$ & $69.27 \pm 4.09$ & $70.99 \pm 3.07$ \\
+\addlinespace
 Compact & linear & $0.992 \pm 0.001$ & $0.648 \pm 0.012$ & $60.10 \pm 1.06$ & $62.23 \pm 1.59$ \\
+ & wav+linear & $0.988 \pm 0.002$ & $0.650 \pm 0.019$ & $60.45 \pm 1.87$ & $62.81 \pm 1.52$ \\
  & mel & $0.993 \pm 0.000$ & $0.687 \pm 0.017$ & $60.92 \pm 1.01$ & $64.36 \pm 1.58$ \\
  & wav+mel & $0.985 \pm 0.012$ & $0.651 \pm 0.028$ & $58.37 \pm 5.18$ & $62.10 \pm 2.02$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 

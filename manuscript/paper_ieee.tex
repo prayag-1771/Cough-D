@@ -794,7 +794,7 @@ task, obtained here under a partition in which no participant appears on both si
 split, so the simplest explanation for a high score is excluded: the networks are not
 recognising speakers they were trained on.
 
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \caption{Detection on the prompt derived corpus, over held out speakers. Each row is one architecture under one input condition, averaged over the seeds in the third column, with the standard deviation across those seeds. Sensitivity is the proportion of coughs recovered and specificity the proportion of non-coughs rejected; both are reported because the class prior makes accuracy alone uninformative.}\label{tab:grid}
 \small
 \begin{tabular}{@{}llrcccc@{}}
@@ -807,16 +807,20 @@ ResNet18 & linear & 5 & $99.09 \pm 0.13$ & $97.72 \pm 0.62$ & $99.48 \pm 0.26$ &
  & wav+mel & 5 & $98.65 \pm 0.49$ & $97.37 \pm 0.53$ & $99.02 \pm 0.74$ & $0.961 \pm 0.014$ \\
 \addlinespace
 MobileNetV2 & linear & 5 & $99.10 \pm 0.12$ & $97.68 \pm 0.97$ & $99.50 \pm 0.28$ & $0.974 \pm 0.003$ \\
- & wav+linear & 2 & $98.93 \pm 0.18$ & $97.43 \pm 0.79$ & $99.36 \pm 0.45$ & $0.969 \pm 0.005$ \\
+ & wav+linear & 5 & $98.89 \pm 0.16$ & $97.01 \pm 1.08$ & $99.43 \pm 0.42$ & $0.968 \pm 0.004$ \\
  & mel & 5 & $98.86 \pm 0.33$ & $98.35 \pm 0.34$ & $99.00 \pm 0.49$ & $0.967 \pm 0.009$ \\
  & wav+mel & 5 & $98.91 \pm 0.23$ & $97.50 \pm 0.91$ & $99.31 \pm 0.30$ & $0.968 \pm 0.007$ \\
 \addlinespace
+DenseNet201 & mel & 3 & $99.07 \pm 0.12$ & $97.92 \pm 0.68$ & $99.40 \pm 0.13$ & $0.973 \pm 0.004$ \\
+ & wav+mel & 3 & $98.73 \pm 0.50$ & $97.54 \pm 0.59$ & $99.06 \pm 0.78$ & $0.964 \pm 0.014$ \\
+\addlinespace
 Compact & linear & 5 & $96.43 \pm 0.38$ & $93.35 \pm 1.60$ & $97.31 \pm 0.74$ & $0.898 \pm 0.010$ \\
+ & wav+linear & 5 & $95.62 \pm 0.30$ & $92.37 \pm 1.71$ & $96.55 \pm 0.47$ & $0.876 \pm 0.009$ \\
  & mel & 5 & $96.46 \pm 0.34$ & $92.46 \pm 2.24$ & $97.60 \pm 0.83$ & $0.898 \pm 0.009$ \\
  & wav+mel & 5 & $92.57 \pm 8.29$ & $73.93 \pm 41.40$ & $97.89 \pm 1.55$ & $0.715 \pm 0.400$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The compact network reaches $96.43 \pm 0.38$ per cent on the same condition, and the gap
 between it and ResNet18 is larger in sensitivity, $93.35 \pm 1.60$ against
@@ -837,26 +841,40 @@ Section~\ref{sec:setup-train}. The relevant observation is that it happened unde
 condition combining the mel axis with shrinkage and under no other, and only to the
 network with the least capacity.
 
+DenseNet201 was run on the two mel conditions at three seeds, because its memory
+requirement makes it several times more expensive per run than the others, and what it
+shows is worth that cost. On the mel axis it reaches $98.66 \pm 0.31$ per cent balanced
+accuracy, against MobileNetV2's $98.68 \pm 0.17$ and ResNet18's $98.17 \pm 0.41$. The
+deepest network in the comparison is therefore indistinguishable from the smallest
+pretrained one, and its margin over the middle one is half a point, which is inside the
+bound Section~\ref{sec:setup-metrics} sets for an effect that may be claimed at all. The
+separation that does appear is the three to four points between each of the three
+pretrained networks and the one trained from random initialisation on the same axis. On
+this task, at this label quality, it is pretrained initialisation and not capacity that
+distinguishes one architecture from another.
+
 \subsection{Whether wavelet shrinkage helps}\label{sec:res-denoise}
 
 Table~\ref{tab:paired} tests the shrinkage on paired decisions. The result is that it does
 not help, and that where the effect reaches significance it is negative.
 
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \caption{Wavelet shrinkage tested on paired decisions over the prompt derived corpus. For each pair of conditions, $b$ counts the recordings the unprocessed condition classifies correctly and the shrunk condition does not, and $c$ counts the reverse; these are the only recordings McNemar's test uses. Adjusted $p$ values follow the step down procedure of Holm over the family of comparisons in this table. The final column gives the change in accuracy across seeds, which is the quantity that determines whether an effect of this size could be claimed from a single run.}\label{tab:paired}
 \small
 \begin{tabular}{@{}llrrrllc@{}}
 \toprule
 Architecture & Comparison & Seeds & $b$ & $c$ & $p$ & $p$ adj.\ & Accuracy change \\
 \midrule
-ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0221$ & $-0.29 \pm 0.19$ \\
+ResNet18 & linear $\rightarrow$ wav+linear & 5 & 66 & 37 & $0.0055$ & $0.0277$ & $-0.29 \pm 0.19$ \\
 ResNet18 & mel $\rightarrow$ wav+mel & 5 & 71 & 65 & $0.668$ & $1.000$ & $-0.06 \pm 0.39$ \\
-MobileNetV2 & linear $\rightarrow$ wav+linear & 2 & 25 & 17 & $0.280$ & $0.840$ & $-0.20 \pm 0.21$ \\
+MobileNetV2 & linear $\rightarrow$ wav+linear & 5 & 71 & 50 & $0.0686$ & $0.206$ & $-0.21 \pm 0.24$ \\
 MobileNetV2 & mel $\rightarrow$ wav+mel & 5 & 53 & 58 & $0.704$ & $1.000$ & $+0.05 \pm 0.40$ \\
+DenseNet201 & mel $\rightarrow$ wav+mel & 3 & 50 & 29 & $0.0238$ & $0.0953$ & $-0.35 \pm 0.52$ \\
+Compact & linear $\rightarrow$ wav+linear & 5 & 196 & 115 & $<10^{-4}$ & $<10^{-4}$ & $-0.80 \pm 0.65$ \\
 Compact & mel $\rightarrow$ wav+mel & 5 & 525 & 133 & $<10^{-4}$ & $<10^{-4}$ & $-3.89 \pm 8.25$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 For ResNet18 on the linear axis, $66$ recordings are classified correctly without
 shrinkage and incorrectly with it, against $37$ in the reverse direction. McNemar's test
@@ -865,10 +883,19 @@ the family in Table~\ref{tab:paired}, and the accuracy change across seeds is
 $-0.29 \pm 0.19$ points. The effect is therefore real, small, and in the direction
 opposite to the one claimed for the method. On the mel axis the same comparison is
 indistinguishable from no effect, $71$ against $65$ discordant recordings and
-$p = 0.668$ before any correction. For the compact network on the mel axis the test rejects
-decisively, but
-the accuracy change is $-3.89 \pm 8.25$ points, and a spread four times the size of the
-effect is the degenerate seed discussed above rather than a property of shrinkage.
+$p = 0.668$ before any correction. For the compact network on the mel axis the test
+rejects decisively, but the accuracy change is $-3.89 \pm 8.25$ points, and a spread four
+times the size of the effect is the degenerate seed discussed above rather than a property
+of shrinkage. The same network on the linear axis carries the same conclusion without that
+complication: $196$ recordings against $115$, a decisive rejection, and a change of
+$-0.80 \pm 0.65$ points with no degenerate seed behind it.
+
+DenseNet201 contributes the one comparison that shows what the correction is for. Its
+single test gives $p = 0.0238$, which any convention that ignores the family a test
+belongs to would report as an effect, and $0.0953$ after the step down, which would not.
+Had that architecture been run on its own, the same decisions would have been published as
+a significant result about shrinkage on the mel axis, and over the family they do not
+support one.
 
 Section~\ref{sec:design-denoise} supplies the mechanism, and it is worth restating here
 because it determines how far these results generalise. The universal threshold is set
@@ -887,7 +914,7 @@ of any kind, to the exhaustively verified evaluation split of the human annotate
 at the same class prior. Table~\ref{tab:external} gives the result and
 \figref{fig:transfer} plots it against the in corpus figure for the same weights.
 
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \caption{The same saved weights applied to human annotated audio at the same class prior, with no retraining and no adaptation of any kind. The rows correspond one to one with those of Table~\ref{tab:grid}. The fall is asymmetric: specificity is substantially retained while sensitivity is not, so the detectors continue to reject non-coughs and stop recovering coughs.}\label{tab:external}
 \small
 \begin{tabular}{@{}llrcccc@{}}
@@ -899,16 +926,21 @@ ResNet18 & linear & 5 & $78.03 \pm 1.62$ & $56.04 \pm 4.04$ & $84.32 \pm 3.24$ &
  & mel & 5 & $78.70 \pm 2.31$ & $57.55 \pm 3.89$ & $84.76 \pm 3.88$ & $0.411 \pm 0.031$ \\
  & wav+mel & 5 & $77.56 \pm 3.18$ & $59.62 \pm 2.78$ & $82.70 \pm 4.34$ & $0.401 \pm 0.056$ \\
 \addlinespace
-MobileNetV2 & linear & 2 & $76.26 \pm 2.08$ & $62.74 \pm 2.00$ & $80.14 \pm 3.25$ & $0.392 \pm 0.023$ \\
+MobileNetV2 & linear & 5 & $78.15 \pm 2.28$ & $60.57 \pm 5.48$ & $83.19 \pm 4.26$ & $0.415 \pm 0.024$ \\
+ & wav+linear & 5 & $76.26 \pm 2.85$ & $56.04 \pm 3.92$ & $82.05 \pm 4.46$ & $0.362 \pm 0.039$ \\
  & mel & 5 & $74.92 \pm 3.98$ & $66.04 \pm 4.11$ & $77.46 \pm 5.97$ & $0.392 \pm 0.054$ \\
  & wav+mel & 5 & $77.65 \pm 3.00$ & $57.92 \pm 4.30$ & $83.30 \pm 4.89$ & $0.396 \pm 0.038$ \\
 \addlinespace
+DenseNet201 & mel & 3 & $81.09 \pm 1.31$ & $54.40 \pm 2.37$ & $88.74 \pm 2.03$ & $0.443 \pm 0.025$ \\
+ & wav+mel & 3 & $74.72 \pm 7.96$ & $59.43 \pm 7.37$ & $79.10 \pm 11.65$ & $0.364 \pm 0.096$ \\
+\addlinespace
 Compact & linear & 5 & $68.11 \pm 1.55$ & $45.66 \pm 4.88$ & $74.54 \pm 3.26$ & $0.184 \pm 0.015$ \\
+ & wav+linear & 5 & $69.92 \pm 5.44$ & $43.40 \pm 6.26$ & $77.51 \pm 8.62$ & $0.202 \pm 0.052$ \\
  & mel & 5 & $73.36 \pm 5.67$ & $38.49 \pm 9.70$ & $83.35 \pm 10.00$ & $0.235 \pm 0.049$ \\
  & wav+mel & 5 & $70.34 \pm 8.57$ & $36.79 \pm 21.85$ & $79.95 \pm 16.25$ & $0.161 \pm 0.106$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 ResNet18 on the linear condition falls from $98.60$ per cent balanced accuracy to
 $70.18 \pm 0.44$. The fall is not uniform across the two classes, and the asymmetry is the
@@ -941,7 +973,7 @@ cheaply. The area under the receiver operating characteristic distinguishes the 
 because it depends on the ordering of the scores alone and not on where the threshold
 falls. Table~\ref{tab:threshold} reports it.
 
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \caption{Discrimination against calibration on the external set. The area under the curve depends only on the ordering of the scores, so a value that holds up while balanced accuracy falls indicates that the ranking survived and the inherited threshold did not. The final column is the balanced accuracy attainable at the best threshold for this set. That threshold is chosen on the same recordings it is scored on, so the column is an upper bound on what recalibration could recover and not an operating point anyone could reach in advance.}\label{tab:threshold}
 \small
 \begin{tabular}{@{}llcccc@{}}
@@ -955,16 +987,21 @@ ResNet18 & linear & $0.998 \pm 0.002$ & $0.749 \pm 0.018$ & $70.18 \pm 0.44$ & $
  & mel & $0.999 \pm 0.000$ & $0.768 \pm 0.016$ & $71.15 \pm 1.01$ & $72.34 \pm 1.68$ \\
  & wav+mel & $0.998 \pm 0.001$ & $0.754 \pm 0.024$ & $71.16 \pm 2.08$ & $72.31 \pm 1.35$ \\
 \addlinespace
-MobileNetV2 & linear & $0.998 \pm 0.000$ & $0.769 \pm 0.005$ & $71.44 \pm 0.62$ & $72.86 \pm 0.05$ \\
+MobileNetV2 & linear & $0.998 \pm 0.000$ & $0.768 \pm 0.007$ & $71.88 \pm 1.25$ & $73.30 \pm 0.73$ \\
+ & wav+linear & $0.998 \pm 0.001$ & $0.739 \pm 0.014$ & $69.05 \pm 1.45$ & $70.61 \pm 1.95$ \\
  & mel & $0.998 \pm 0.000$ & $0.766 \pm 0.025$ & $71.75 \pm 1.93$ & $72.90 \pm 1.62$ \\
  & wav+mel & $0.998 \pm 0.001$ & $0.748 \pm 0.023$ & $70.61 \pm 1.17$ & $71.64 \pm 1.65$ \\
 \addlinespace
+DenseNet201 & mel & $0.998 \pm 0.001$ & $0.767 \pm 0.022$ & $71.57 \pm 0.96$ & $72.96 \pm 0.93$ \\
+ & wav+mel & $0.998 \pm 0.002$ & $0.736 \pm 0.021$ & $69.27 \pm 4.09$ & $70.99 \pm 3.07$ \\
+\addlinespace
 Compact & linear & $0.992 \pm 0.001$ & $0.648 \pm 0.012$ & $60.10 \pm 1.06$ & $62.23 \pm 1.59$ \\
+ & wav+linear & $0.988 \pm 0.002$ & $0.650 \pm 0.019$ & $60.45 \pm 1.87$ & $62.81 \pm 1.52$ \\
  & mel & $0.993 \pm 0.000$ & $0.687 \pm 0.017$ & $60.92 \pm 1.01$ & $64.36 \pm 1.58$ \\
  & wav+mel & $0.985 \pm 0.012$ & $0.651 \pm 0.028$ & $58.37 \pm 5.18$ & $62.10 \pm 2.02$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The answer is the unwelcome one. For ResNet18 on the linear condition the area under the
 curve falls from $0.998$ within the corpus to $0.749$ outside it. The ordering itself has
@@ -977,11 +1014,16 @@ pattern holds for every architecture and condition in the table. The obvious and
 remedy for a domain shift, collecting a little target data and moving the operating point,
 would recover almost none of what was lost here.
 
-Two further observations follow from the external table. The first is that the ordering of the
-architectures is preserved: the compact network, which was roughly three points behind
-ResNet18 in corpus, is roughly ten points behind it out of corpus, at
-$60.10 \pm 1.06$ on the linear condition. Whatever the larger network learned that the
-smaller one did not, part of it transfers. The second is that the input conditions remain
+Two further observations follow from the external table. The first is that the only
+separation between architectures that was worth anything inside the corpus is also the
+only one that survives leaving it, and it does not lie between the pretrained networks.
+ResNet18, MobileNetV2 and DenseNet201 reach $71.15 \pm 1.01$, $71.75 \pm 1.93$ and
+$71.57 \pm 0.96$ per cent balanced accuracy on the mel axis outside the corpus, which
+places all three inside one another's spread, as they were inside it. The compact network,
+roughly three points behind ResNet18 in corpus, is roughly ten points behind it out of
+corpus, at $60.10 \pm 1.06$ on the linear condition. Whatever pretraining supplied that
+the smaller network had to find in the data alone, part of it transfers, and capacity
+beyond that supplies nothing in either regime. The second is that the input conditions remain
 indistinguishable from one another under the change of corpus. Shrinkage gains
 $1.30 \pm 1.36$ accuracy points on the linear axis externally, which is a change smaller
 than its own spread across seeds, so the external set does not rescue the preprocessing
@@ -1064,7 +1106,7 @@ recovery of a prompted behaviour from held out speakers and the other measures a
 with a detector. Nothing in the quantity itself marks the difference, which is why the
 regime is named in the caption rather than left to be inferred from the corpus name.
 
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \caption{Detection on the classifier derived corpus at a matched class prior. What is measured here is agreement with the detector that produced the labels, not whether a cough is present, and the figures should be read as a property of that regime.}\label{tab:regime}
 \small
 \begin{tabular}{@{}llrcccc@{}}
@@ -1077,7 +1119,7 @@ ResNet18 & linear & 5 & $98.94 \pm 0.14$ & $97.45 \pm 0.68$ & $99.37 \pm 0.29$ &
  & wav+mel & 5 & $98.60 \pm 0.25$ & $97.38 \pm 0.48$ & $98.96 \pm 0.36$ & $0.960 \pm 0.007$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The paired test behaves on this corpus much as it does on the other. Shrinkage applied
 before a linear spectrogram costs $0.68 \pm 0.38$ accuracy points, with $79$ recordings
@@ -1226,8 +1268,8 @@ spectrograms the widest gap between architectures separates the four layer netwo
 $95.33 \pm 0.57$ from the same ResNet18's $98.60$, which is about three points; the widest
 effect of the frequency axis, holding the architecture fixed, is under half a point; and
 wavelet shrinkage, the intervention the original work credited with its improvement,
-improves none of the six paired comparisons made across the two trainable corpora, the
-three in which it has a detectable effect at all being losses. The provenance of the label
+detectably improves none of the nine paired comparisons made across the two trainable
+corpora, the four in which its effect is detectable at all being losses. The provenance of the label
 therefore dominates the design of the model by roughly an order of magnitude. A
 practitioner choosing where to spend effort
 should read that ordering literally: a better architecture applied to prompt derived
