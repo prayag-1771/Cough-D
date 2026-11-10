@@ -141,7 +141,12 @@ def main():
         last = arch
 
     head = [
-        '\\begin{table}[htbp]',
+        # A two column class gives a single column about three and a
+        # half inches wide, which takes four columns of this kind of
+        # content and not six or more, so this one is a page wide
+        # float. A single column class sets a starred float exactly
+        # as it sets an ordinary one, so one source serves both.
+        '\\begin{table*}[tbp]',
         '\\caption{Discrimination against calibration on the external set. The '
         'area under the curve depends only on the ordering of the scores, so a '
         'value that holds up while balanced accuracy falls indicates that the '
@@ -161,7 +166,7 @@ def main():
         'Best possible \\\\',
         '\\midrule',
     ]
-    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table}', '']
+    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table*}', '']
     text = '\n'.join(head + body + tail) + '\n'
     with io.open(os.path.join(MS, 'tab_threshold.tex'), 'w',
                  encoding='utf-8', newline='\n') as fh:

@@ -90,7 +90,12 @@ def table(data, label, caption):
     if not body:
         return None
     head = [
-        '\\begin{table}[htbp]',
+        # A two column class gives a single column about three and a
+        # half inches wide, which takes four columns of this kind of
+        # content and not six or more, so this one is a page wide
+        # float. A single column class sets a starred float exactly
+        # as it sets an ordinary one, so one source serves both.
+        '\\begin{table*}[tbp]',
         '\\caption{%s}\\label{%s}' % (caption, label),
         '\\small',
         '\\begin{tabular}{@{}llrcccc@{}}',
@@ -99,7 +104,7 @@ def table(data, label, caption):
         '& MCC \\\\',
         '\\midrule',
     ]
-    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table}', '']
+    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table*}', '']
     return '\n'.join(head + body + tail) + '\n'
 
 
@@ -180,7 +185,12 @@ def paired_table(root, label, caption):
                fmt_p(p), fmt_p(padj), d_m, d_s))
 
     head = [
-        '\\begin{table}[htbp]',
+        # A two column class gives a single column about three and a
+        # half inches wide, which takes four columns of this kind of
+        # content and not six or more, so this one is a page wide
+        # float. A single column class sets a starred float exactly
+        # as it sets an ordinary one, so one source serves both.
+        '\\begin{table*}[tbp]',
         '\\caption{%s}\\label{%s}' % (caption, label),
         '\\small',
         '\\begin{tabular}{@{}llrrrllc@{}}',
@@ -189,7 +199,7 @@ def paired_table(root, label, caption):
         'Accuracy change \\\\',
         '\\midrule',
     ]
-    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table}', '']
+    tail = ['\\bottomrule', '\\end{tabular}', '\\end{table*}', '']
     return '\n'.join(head + body + tail) + '\n'
 
 
