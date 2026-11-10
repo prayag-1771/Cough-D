@@ -75,16 +75,35 @@ def parse(path):
     return entries
 
 
-def initials(given):
-    """'David L.' -> 'D.L.'  'S. Grace' -> 'S.G.'  'Chlo{\\\"e}' -> 'C.'"""
+def one_initial(part):
+    """The initial of a single component of a given name."""
+    letter = re.sub(r'[^A-Za-z]', '', part)
+    if letter:
+        return letter[0].upper() + '.'
+    if part.startswith('{'):
+        # a name whose first letter is written as an accent macro
+        return part[1:2].upper() + '.'
+    return ''
+
+
+def name_initials(given):
+    """Each component of a given name reduced to its initial.
+
+    A hyphenated given name keeps its hyphen and contributes one initial per
+    part, so Liang-Chieh gives L.-C. and not L., which would drop half of
+    the name without any sign that it had been dropped.
+    """
     out = []
     for part in given.replace('.', ' ').split():
-        letter = re.sub(r'[^A-Za-z]', '', part)
-        if letter:
-            out.append(letter[0].upper() + '.')
-        elif part.startswith('{'):
-            out.append(part[1:2].upper() + '.')
-    return ''.join(out)
+        bits = [b for b in (one_initial(p) for p in part.split('-')) if b]
+        if bits:
+            out.append('-'.join(bits))
+    return out
+
+
+def initials(given):
+    """'David L.' -> 'D.L.'   'Liang-Chieh' -> 'L.-C.'"""
+    return ''.join(name_initials(given))
 
 
 def format_authors(raw):
@@ -104,23 +123,17 @@ def format_authors(raw):
 
 
 def ieee_initials(given):
-    """'Hassan N.' -> 'H. N. '   IEEE puts a space between initials."""
-    out = []
-    for part in given.replace('.', ' ').split():
-        letter = re.sub(r'[^A-Za-z]', '', part)
-        if letter:
-            out.append(letter[0].upper() + '.')
-        elif part.startswith('{'):
-            out.append(part[1:2].upper() + '.')
-    return ' '.join(out)
+    """'Hassan N.' -> 'H. N.'   IEEE puts a space between initials."""
+    return ' '.join(name_initials(given))
 
 
 def ieee_authors(raw):
     """Given names abbreviated to initials and placed before the surname.
 
-    The whole list is given rather than truncated, which is what the Access
-    template asks for: et al. is used only where the bibliography itself
-    records that the names were not published.
+    The guide sets how long the list may be: every name is given up to six,
+    and beyond six only the first, followed by et al. An entry whose author
+    field records that not all the names were published is treated the same
+    way, since in both cases the list stands for more authors than it prints.
     """
     names = [a.strip() for a in re.split(r'\s+and\s+', unwrap(raw)) if a.strip()]
     out, etal = [], False
@@ -135,8 +148,8 @@ def ieee_authors(raw):
             sur, given = bits[-1], ' '.join(bits[:-1])
         ini = ieee_initials(given)
         out.append(('%s %s' % (ini, sur)).strip())
-    if etal:
-        return ', '.join(out) + ', \\emph{et al.}'
+    if etal or len(out) > 6:
+        return out[0] + ' et al.'
     if len(out) > 2:
         return ', '.join(out[:-1]) + ', and ' + out[-1]
     return ' and '.join(out)
@@ -153,26 +166,31 @@ def ieee_pages(pages):
 def format_entry_ieee(f):
     """One reference in the style the Access template sets out.
 
-    Titles and container names are reproduced as the publisher prints them.
-    The style manual asks for sentence case and abbreviated periodical
-    names, but applying either by rule would mean lowercasing or contracting
-    words this script cannot tell apart from proper nouns, and a reference is
-    the one place in a manuscript where a reader cannot catch an error
-    without going to the cited work. Reproducing what was read from the
-    source is therefore preferred over guessing at the house style.
+    The guide asks for sentence case titles and abbreviated periodical and
+    conference names. Neither can be produced by rule from the published
+    form: lowercasing a title would destroy the proper nouns and acronyms in
+    it, and contracting a name would mean inventing abbreviations for the
+    words the guide's table does not cover. Both are therefore carried in
+    the entry itself, as ieeetitle and ieeevenue, beside the published form
+    they were derived from, so that the two can be compared without leaving
+    the file. Where an entry has neither field the published form is used,
+    which is the right answer for a one word periodical title, since the
+    guide says those are not abbreviated.
     """
     a = ieee_authors(f.get('author', ''))
-    title = unwrap(f.get('title', '')).rstrip('.')
+    title = unwrap(f.get('ieeetitle') or f.get('title', '')).rstrip('.')
     year = unwrap(f.get('year', ''))
     vol = unwrap(f.get('volume', ''))
     num = unwrap(f.get('number', ''))
     pp = ieee_pages(unwrap(f.get('pages', '')))
     kind = f['__kind__']
+    venue = unwrap(f.get('ieeevenue') or f.get('journal')
+                   or f.get('booktitle') or '')
 
     bits = ['%s, ``%s,\'\'' % (a, title)] if a else ['``%s,\'\'' % title]
 
     if kind == 'article':
-        bits.append('\\emph{%s},' % unwrap(f.get('journal', '')))
+        bits.append('\\emph{%s},' % venue)
         if vol:
             bits.append('vol. %s,' % vol)
         if num:
@@ -181,7 +199,7 @@ def format_entry_ieee(f):
             bits.append('%s %s,' % pp)
         bits.append('%s.' % year)
     elif kind in ('inproceedings', 'incollection'):
-        bits.append('in \\emph{%s},' % unwrap(f.get('booktitle', '')))
+        bits.append('in \\emph{%s},' % venue)
         if pp:
             bits.append('%s, %s %s.' % (year, pp[0], pp[1]))
         else:
@@ -194,9 +212,14 @@ def format_entry_ieee(f):
         bits.append('%s.' % year)
     else:
         how = unwrap(f.get('howpublished', '')) or unwrap(f.get('note', ''))
-        bits.append('%s.' % year)
-        if how:
-            bits.append('[Online]. Available: %s' % how)
+        if how.lower().startswith('arxiv:'):
+            # The form the guide gives for a preprint is the year followed
+            # by the identifier, with no Available: and no address.
+            bits.append('%s, %s.' % (year, how))
+        else:
+            bits.append('%s.' % year)
+            if how:
+                bits.append('[Online]. Available: %s' % how)
 
     return ' '.join(b for b in bits if b.strip())
 

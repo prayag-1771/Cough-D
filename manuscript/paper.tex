@@ -733,9 +733,12 @@ that is trained once~\cite{dietterich1998}. Because a family of such comparisons
 the p values are adjusted by the step down procedure of Holm~\cite{holm1979}.
 
 One further quantity is reported beside every effect, and it governs how the effects
-should be read. Each condition is run under five seeds, and the spread of accuracy across
-those seeds is reported. An effect smaller than roughly twice that spread cannot be
-claimed from single runs, however large the test set is. This is stated because
+should be read. Each condition is run under five seeds, three in the case of DenseNet201,
+and the spread of accuracy across those seeds is reported. An effect smaller than roughly
+twice that spread cannot be claimed from single runs, however large the test set is. The
+spread quoted for DenseNet201 rests on three runs and is accordingly a coarser estimate
+than the others, which is a further reason not to read a small difference involving it as
+an effect. This is stated because
 differences well under one accuracy point are routinely reported in this area without any
 estimate of run to run variation, and the present work is in a position to say what that
 variation is.
@@ -1417,7 +1420,7 @@ Gemmeke, J.F., Ellis, D.P.W., Freedman, D., Jansen, A., Lawrence, W., Moore, R.C
 He, K., Zhang, X., Ren, S., Sun, J.: Deep Residual Learning for Image Recognition. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 770–778 (2016)
 
 \bibitem{sandler2018}
-Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., Chen, L.: MobileNetV2: Inverted Residuals and Linear Bottlenecks. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 4510–4520 (2018)
+Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., Chen, L.-C.: MobileNetV2: Inverted Residuals and Linear Bottlenecks. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 4510–4520 (2018)
 
 \bibitem{huang2017}
 Huang, G., Liu, Z., van der Maaten, L., Weinberger, K.Q.: Densely Connected Convolutional Networks. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 2261–2269 (2017)
