@@ -14,6 +14,12 @@
 \newcommand{\figref}[1]{Fig.~\ref{#1}}
 \newcommand{\parstart}[2]{\PARstart{#1}{#2}}
 
+\makeatletter
+\@ifundefined{c@biography}{\newcounter{biography}}{}
+\@ifundefined{if@biographyTOCentrynotmade}%
+  {\newif\if@biographyTOCentrynotmade}{}
+\makeatother
+
 \begin{document}
 
 \history{Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000.}
@@ -1489,14 +1495,14 @@ S. Holm, ``A simple sequentially rejective multiple test procedure,'' \emph{Scan
 
 \end{thebibliography}
 
-\begin{IEEEbiographynophoto}{Prayag Sharma}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{Prayag_Sharma.jpg}}]{Prayag Sharma}
 is currently pursuing the B.Tech. degree in Computer Science and Engineering with the
 School of Computer Science and Engineering (SCOPE), Vellore Institute of Technology (VIT),
 Chennai, India, and is expected to graduate in 2028. His research interests include
 artificial intelligence and machine learning.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
-\begin{IEEEbiographynophoto}{Ravi Tiwari}
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{Ravi_Tiwari.jpeg}}]{Ravi Tiwari}
 received the B.E. degree in Electronics and Communication from LNCTS, Bhopal, India, in
 2011, and the M.Tech. and Ph.D. degrees in Electronics and Communication Engineering from
 the National Institute of Technology, Rourkela, India, in 2014 and 2019, respectively. He
@@ -1509,7 +1515,7 @@ Electronics Engineering (SENSE), Vellore Institute of Technology (VIT), Chennai,
 His research interests include statistical signal processing, wireless communication, and
 information theory. He has published in reputed journals such as IEEE Transactions, IEEE
 Letters, and Wiley Transactions.
-\end{IEEEbiographynophoto}
+\end{IEEEbiography}
 
 \EOD
 

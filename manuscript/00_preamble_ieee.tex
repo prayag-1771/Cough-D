@@ -14,4 +14,10 @@
 \newcommand{\figref}[1]{Fig.~\ref{#1}}
 \newcommand{\parstart}[2]{\PARstart{#1}{#2}}
 
+\makeatletter
+\@ifundefined{c@biography}{\newcounter{biography}}{}
+\@ifundefined{if@biographyTOCentrynotmade}%
+  {\newif\if@biographyTOCentrynotmade}{}
+\makeatother
+
 \begin{document}
