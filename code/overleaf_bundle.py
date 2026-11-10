@@ -1,29 +1,40 @@
-"""Build the archive to upload to Overleaf, one per target.
+"""Collect what Overleaf needs, one folder per target.
 
     python -I overleaf_bundle.py                 # both targets
     python -I overleaf_bundle.py --venue ieee
+    python -I overleaf_bundle.py --zip           # archives as well
 
 There is no TeX on the machine this manuscript was produced on, so the
-document is built elsewhere, and what gets uploaded has to be assembled by
-hand every time the source changes. Doing it by hand is how a file gets left
-out, and a missing font or class file fails the build with an error that says
-nothing about which file is absent. This writes the archive instead.
+document is built elsewhere, and what gets uploaded has to be assembled again
+every time the source changes. Doing it by hand is how a file gets left out,
+and a missing font or class file fails the build with an error that says
+nothing about which file is absent.
+
+The files are laid out open, in the tree they have to keep, so they can be
+dragged in or inspected one at a time; --zip additionally writes an archive
+for the upload-project route.
 
 What goes in is derived from the assembled file rather than listed here: the
 class comes from its \\documentclass, the figures from its \\includegraphics.
 Only the support files that the Access class needs and does not name in a way
-a script can read are enumerated, and the archive is refused if any of them
-is missing, so an incomplete upload is a failure here rather than a confusing
+a script can read are enumerated, and the folder is refused if any of them is
+missing, so an incomplete upload is a failure here rather than a confusing
 log on Overleaf.
 
-The archives are not committed. The Access class, its fonts and the IEEE
-logos are the publisher's to distribute and are ignored by git, so an archive
-containing them must be ignored too; it is reproduced by running this.
+references.bib is copied in as well, for reference rather than for the build.
+The bibliography is already expanded into the manuscript by bib2tex.py, so
+the document compiles in one pass with no BibTeX run and nothing in it reads
+the .bib.
+
+None of this is committed. The Access class, its fonts and the IEEE logos are
+the publisher's to distribute and are ignored by git, so a copy of them must
+be ignored too; it is reproduced by running this.
 """
 import argparse
 import glob
 import os
 import re
+import shutil
 import sys
 import zipfile
 
@@ -43,9 +54,9 @@ IEEE_SUPPORT = ['IEEEtran.cls', 'spotcolor.sty',
 OPTIONAL = ['figs/Prayag_Sharma.jpg', 'figs/Ravi_Tiwari.jpeg']
 
 VENUES = {
-    'ieee': {'tex': 'paper_ieee.tex', 'zip': 'ieee_access_upload.zip',
+    'ieee': {'tex': 'paper_ieee.tex', 'dir': 'ieee_access',
              'support': IEEE_SUPPORT, 'fonts': True},
-    'springer': {'tex': 'paper.tex', 'zip': 'springer_upload.zip',
+    'springer': {'tex': 'paper.tex', 'dir': 'springer',
                  'support': [], 'fonts': False},
 }
 
@@ -92,7 +103,7 @@ def wanted(venue):
     return out
 
 
-def build(venue):
+def build(venue, make_zip=False):
     files = wanted(venue)
     missing = [f for f in files if not os.path.exists(os.path.join(MS, f))]
     if missing:
@@ -101,21 +112,46 @@ def build(venue):
             print('    ' + f)
         return 1
 
-    os.makedirs(OUT, exist_ok=True)
-    path = os.path.join(OUT, VENUES[venue]['zip'])
-    with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
-        for f in files:
-            z.write(os.path.join(MS, f), f)
+    dest = os.path.join(OUT, VENUES[venue]['dir'])
+    # Rewritten from scratch each time, so a file that has left the
+    # manuscript does not linger here and get uploaded.
+    if os.path.isdir(dest):
+        shutil.rmtree(dest)
+    for f in files:
+        target = os.path.join(dest, f.replace('/', os.sep))
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        shutil.copy2(os.path.join(MS, f), target)
 
+    # The .bib is for reading, not for building: bib2tex.py has already
+    # expanded the bibliography into the manuscript.
+    bib = os.path.join(ROOT, 'references.bib')
+    if os.path.exists(bib):
+        shutil.copy2(bib, os.path.join(dest, 'references.bib'))
+        files = files + ['references.bib  (not used by the build)']
+
+    total = sum(os.path.getsize(os.path.join(dest, f.replace('/', os.sep)))
+                for f in os.listdir(dest)
+                if os.path.isfile(os.path.join(dest, f)))
     fonts = sum(1 for f in files if f.endswith(('.pfb', '.tfm', '.map')))
     named = [f for f in files if not f.endswith(('.pfb', '.tfm', '.map'))]
-    print('%s -> %s' % (venue, os.path.relpath(path, ROOT)))
-    print('    %d files, %.0f KB' % (len(files),
-                                     os.path.getsize(path) / 1024.0))
+    print('%s -> %s%s' % (venue, os.path.relpath(dest, ROOT), os.sep))
     for f in named:
         print('      ' + f)
     if fonts:
-        print('      and %d font and map files' % fonts)
+        print('      %d font and map files' % fonts)
+
+    if make_zip:
+        os.makedirs(OUT, exist_ok=True)
+        path = os.path.join(OUT, VENUES[venue]['dir'] + '_upload.zip')
+        with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
+            for base, _dirs, names in os.walk(dest):
+                for n in sorted(names):
+                    full = os.path.join(base, n)
+                    z.write(full, os.path.relpath(full, dest).replace(
+                        os.sep, '/'))
+        print('    also %s, %.0f KB' % (os.path.basename(path),
+                                        os.path.getsize(path) / 1024.0))
+
     print('    compile with pdfLaTeX; the bibliography is inlined, so no '
           'BibTeX pass is needed')
     return 0
@@ -125,10 +161,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--venue', choices=sorted(VENUES), default=None,
                     help='default: both')
+    ap.add_argument('--zip', action='store_true',
+                    help='also write an archive beside the folder')
     a = ap.parse_args()
     bad = 0
     for venue in ([a.venue] if a.venue else sorted(VENUES)):
-        bad |= build(venue)
+        bad |= build(venue, a.zip)
         print()
     return bad
 
