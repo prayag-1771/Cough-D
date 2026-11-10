@@ -198,7 +198,11 @@ def check_prose(t, r):
     if en:
         r.bad('prose', '%d en dash(es) between words outside the allowed '
                        'names' % en)
-    hy = re.findall(r'[a-z]{2,}-[a-z]{2,}', masked)
+    # The leading letter may be a capital, at the start of a sentence or
+    # in a title, but the match must begin at a word boundary: without
+    # that, Audio-based was reported as udio-based, which reads like a
+    # different problem from the one found.
+    hy = re.findall(r'(?<![A-Za-z])[A-Za-z]{2,}-[a-z]{2,}', masked)
     if hy:
         uniq = sorted(set(hy))
         r.soft('prose', '%d compound hyphen(s), %d distinct: %s'
