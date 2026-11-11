@@ -395,15 +395,30 @@ def fig_effect():
     if not pts:
         print('  effect: no usable rows, skipped')
         return
-    fig, ax = plt.subplots(figsize=(3.3, 2.5))
-    hi = max(max(p[0] for p in pts), max(p[1] for p in pts)) * 1.15
-    ax.plot([0, hi], [0, hi], ls=':', lw=0.7, color='#888888')
+    fig, ax = plt.subplots(figsize=(3.3, 2.6))
+    lo = min(min(p[0] for p in pts if p[0] > 0),
+             min(p[1] for p in pts if p[1] > 0)) * 0.55
+    hi = max(max(p[0] for p in pts), max(p[1] for p in pts)) * 1.8
+    ax.plot([lo, hi], [lo, hi], ls=':', lw=0.7, color='#888888', zorder=1)
+    seen = set()
     for eff, sd, padj in pts:
         sig = padj < 0.05
-        ax.plot([eff], [sd], 's' if sig else 'o', ms=4.5,
-                color='#c03028' if sig else KEPT, mfc='none', lw=0.8)
-    ax.set_xlim(0, hi)
-    ax.set_ylim(0, hi)
+        lab = ('detectable effect' if sig else 'no detectable effect')
+        ax.plot([max(eff, lo)], [max(sd, lo)], 's' if sig else 'o', ms=4.5,
+                color='#c03028' if sig else KEPT, mfc='none', lw=0.8,
+                ls='none', zorder=3,
+                label=None if lab in seen else lab)
+        seen.add(lab)
+    # A decade either way of the data, so the nine comparisons separate
+    # instead of piling into the corner behind the one large spread.
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
+    ax.text(hi * 0.055, hi * 0.105, 'spread exceeds the effect', rotation=45,
+            fontsize=5.5, color='#888888', ha='center', va='bottom')
+    ax.legend(frameon=False, fontsize=6, loc='lower right',
+              handlelength=1.2, borderaxespad=0.1)
     ax.set_xlabel('size of the effect (accuracy points)')
     ax.set_ylabel('spread across seeds (points)')
     out = os.path.join(OUTDIR or FIGS, 'effect.' + EXT)
