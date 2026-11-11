@@ -292,18 +292,46 @@ def fig_transfer():
                     color=tone.get(arch, KEPT), mfc='none', ms=5, lw=0.7,
                     capsize=2, label=arch, ls='none')
 
-    lim = [45, 102]
+    lim = [55, 102]
     ax.plot(lim, lim, color='#999999', lw=0.6, ls=':')
-    ax.text(72, 74, 'no loss on transfer', rotation=45, fontsize=6,
+    ax.text(90, 91, 'no loss on transfer', rotation=45, fontsize=6,
             color='#999999', ha='center', va='bottom')
     ax.set_xlim(*lim)
     ax.set_ylim(*lim)
     ax.set_xlabel('balanced accuracy within the prompted corpus (per cent)')
     ax.set_ylabel('balanced accuracy on human\nannotated audio (per cent)')
     ax.legend(frameon=False, fontsize=7, loc='upper left')
-    fig.tight_layout()
+
+    # The pretrained architectures sit within well under a point of one
+    # another on an axis that has to run the length of the diagonal, so at the
+    # scale that makes the distance from parity readable they are a single
+    # mark. The inset carries the same points at a scale that separates them.
+    pts = [(st.mean(inc[k]), st.mean(ext[k])) for k in shared]
+    tight = [(x, y) for x, y in pts if x >= 97.0]
+    if len(tight) > 2:
+        axi = ax.inset_axes([0.09, 0.36, 0.40, 0.31])
+        for arch in archs:
+            here = [c for c in conds
+                    if (arch, c) in inc and (arch, c) in ext
+                    and st.mean(inc[(arch, c)]) >= 97.0]
+            if not here:
+                continue
+            axi.plot([st.mean(inc[(arch, c)]) for c in here],
+                     [st.mean(ext[(arch, c)]) for c in here],
+                     marks.get(arch, 'o'), color=tone.get(arch, KEPT),
+                     mfc='none', ms=4, ls='none', lw=0.7)
+        axi.set_xlim(min(x for x, _ in tight) - 0.3,
+                     max(x for x, _ in tight) + 0.3)
+        axi.set_ylim(min(y for _, y in tight) - 1.0,
+                     max(y for _, y in tight) + 1.0)
+        axi.tick_params(labelsize=5, length=2, pad=1)
+        for sp in axi.spines.values():
+            sp.set_linewidth(0.5)
+        axi.set_title('pretrained architectures, enlarged', fontsize=5.5,
+                      pad=2)
+
     out = os.path.join(OUTDIR or FIGS, 'transfer.' + EXT)
-    fig.savefig(out, bbox_inches='tight')
+    fig.savefig(out, bbox_inches='tight', pad_inches=0.05)
     plt.close(fig)
     print('  wrote %s' % shortpath(out))
 
