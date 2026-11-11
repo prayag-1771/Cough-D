@@ -65,12 +65,22 @@ alternative, reporting a result under a rule that was never named, is what makes
 denoising comparison impossible to check.
 
 \figref{fig:denoise} shows what the shrinkage removes, for one cough and one
-non-cough recording. The removed component is drawn on its own vertical scale, because
-drawn against the signal it is a flat line at zero; the magnification needed to make it
-visible is printed on each panel, beside the fraction of signal power it accounts for.
+non-cough recording drawn from the classifier derived corpus, the one whose archive is
+retained locally after imaging. The left column of the figure is the waveform as
+recorded and the right column is the component the shrinkage discarded, drawn on its own
+vertical scale because against the signal it is a flat line at zero; the magnification
+needed to make it visible is printed on each panel, beside the fraction of signal power
+it accounts for. What is removed is a low level broadband residual rather than any part
+of the event itself.
 Measured across $259$ recordings, the universal threshold removes a median of $0.67$ per
 cent of the signal power, with quartiles at $0.08$ and $2.28$ per cent, and the empirical
-Bayes rule removes $0.0014$ per cent. It is worth establishing this before any result is
+Bayes rule removes $0.0014$ per cent. \figref{fig:power} gives the distribution over the audit set for both rules.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.98\columnwidth]{shrinkage.pdf}
+\caption{Signal power removed by each shrinkage rule, over the audit set.}\label{fig:power}
+\end{figure} It is worth establishing this before any result is
 reported, because it bounds what the comparison can show. Whatever the shrinkage does to
 recordings of this kind, it does very little of it, and the two input conditions that
 follow from it are very nearly the same images.
@@ -78,13 +88,8 @@ follow from it are very nearly the same images.
 \begin{figure*}[tbp]
 \centering
 \includegraphics[width=\textwidth]{denoise.pdf}
-\caption{What the universal threshold removes from one cough and one non-cough recording,
-drawn from the classifier derived corpus, which is the one whose archive is retained
-locally after imaging. The left column is the waveform as recorded. The right column is
-the component the shrinkage discarded, on its own vertical scale: at the scale of the
-signal it would be indistinguishable from zero, so the magnification is stated on the
-panel. What is removed is a low level broadband residual rather than any part of the
-event itself.}\label{fig:denoise}
+\caption{What the universal threshold removes from one cough and one non-cough
+recording.}\label{fig:denoise}
 \end{figure*}
 
 \subsection{Spectrogram formation and the frequency axis}\label{sec:design-spectro}

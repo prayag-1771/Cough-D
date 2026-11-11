@@ -168,8 +168,9 @@ The specific contributions are the following.
 
 \item An assessment of wavelet shrinkage as a preprocessing step under a protocol able to
       detect an effect of the size being claimed for it. Measured against the spread across
-      seeds, the gain does not survive: the largest improvement observed is $1.30$
-      accuracy points with a seed to seed spread of $1.36$ points about it.
+      seeds, the gain does not survive: the largest improvement observed anywhere is
+      $2.73$ accuracy points, with a spread of $3.54$ points across the seeds it
+      is averaged over.
 
 \item A reproducibility finding about the classifier derived corpus. The recording
       selection used by the work this study extends cannot be reproduced from the corpus as
@@ -245,7 +246,11 @@ Within this strand, the specific pipeline of interest is the one that converts a
 recording into a spectrogram image and hands it to a convolutional network pretrained on
 photographs. That approach reported $98.18$ per cent accuracy on a mel spectrogram
 representation of cough audio~\cite{zhou2021}, and variants of it supply the architectures
-used here~\cite{he2016,sandler2018,huang2017}.
+used here~\cite{he2016,sandler2018,huang2017}. Detection of the event itself continues to be
+pursued in this form and in others, with recent work reporting neural cough
+counting from audio~\cite{feng2024}, detection from acceleration signals in
+place of sound~\cite{sanchezmorillo2024}, and screening pipelines built on
+cough audio for {COVID-19}~\cite{ayappan2025}.
 
 \subsection{How the reported performance was measured}\label{sec:rel-eval}
 
@@ -283,6 +288,18 @@ label is a thresholded detector score, a model is measured on its agreement with
 detector and not on whether a cough is present, and this distinction is frequently left
 implicit. It cannot be resolved by better modelling, only by stating the regime and, where
 possible, comparing across regimes.
+
+The practices this strand calls for have begun to appear in the literature it
+examines. External validation of cough based screening algorithms on data
+collected independently of the development corpus has been reported for
+tuberculosis~\cite{zimmer2026}; an evaluation protocol corrected for leakage
+has been proposed for respiratory sound classification~\cite{park2026}; a
+patient disjoint partition has been applied across two public
+databases~\cite{niu2026}; a feature comparison has been published with
+reproduction as an explicit objective~\cite{smailov2026}; and a methodological
+framework has been assessed on a corpus whose labels were clinically
+validated~\cite{aquino2026}. The recording device has likewise been treated as
+a distribution shift in its own right rather than as noise~\cite{wu2026}.
 
 \subsection{The negative class and what it determines}\label{sec:rel-neg}
 
@@ -340,7 +357,9 @@ and no measure of seed variation. The work this paper extends illustrates all th
 baseline and denoised conditions differ in architecture, in pretraining, in frequency axis
 and in sample rate simultaneously, so no cause can be assigned to the difference between
 them; its text describes soft thresholding while the routine it calls applies an empirical
-Bayes posterior median by default; and its conclusion rests on one run per condition.
+Bayes posterior median by default; and its conclusion rests on one run per condition. How much preprocessing is warranted remains open, and a
+minimal preprocessing paradigm has recently been argued for detection from
+cough audio~\cite{lim2026}.
 
 The present work therefore supplies what this configuration of strands leaves absent: a
 denoising comparison under a named shrinkage rule, with the architecture, the frequency
@@ -418,12 +437,22 @@ alternative, reporting a result under a rule that was never named, is what makes
 denoising comparison impossible to check.
 
 \figref{fig:denoise} shows what the shrinkage removes, for one cough and one
-non-cough recording. The removed component is drawn on its own vertical scale, because
-drawn against the signal it is a flat line at zero; the magnification needed to make it
-visible is printed on each panel, beside the fraction of signal power it accounts for.
+non-cough recording drawn from the classifier derived corpus, the one whose archive is
+retained locally after imaging. The left column of the figure is the waveform as
+recorded and the right column is the component the shrinkage discarded, drawn on its own
+vertical scale because against the signal it is a flat line at zero; the magnification
+needed to make it visible is printed on each panel, beside the fraction of signal power
+it accounts for. What is removed is a low level broadband residual rather than any part
+of the event itself.
 Measured across $259$ recordings, the universal threshold removes a median of $0.67$ per
 cent of the signal power, with quartiles at $0.08$ and $2.28$ per cent, and the empirical
-Bayes rule removes $0.0014$ per cent. It is worth establishing this before any result is
+Bayes rule removes $0.0014$ per cent. \figref{fig:power} gives the distribution over the audit set for both rules.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.98\columnwidth]{shrinkage.pdf}
+\caption{Signal power removed by each shrinkage rule, over the audit set.}\label{fig:power}
+\end{figure} It is worth establishing this before any result is
 reported, because it bounds what the comparison can show. Whatever the shrinkage does to
 recordings of this kind, it does very little of it, and the two input conditions that
 follow from it are very nearly the same images.
@@ -431,13 +460,8 @@ follow from it are very nearly the same images.
 \begin{figure*}[tbp]
 \centering
 \includegraphics[width=\textwidth]{denoise.pdf}
-\caption{What the universal threshold removes from one cough and one non-cough recording,
-drawn from the classifier derived corpus, which is the one whose archive is retained
-locally after imaging. The left column is the waveform as recorded. The right column is
-the component the shrinkage discarded, on its own vertical scale: at the scale of the
-signal it would be indistinguishable from zero, so the magnification is stated on the
-panel. What is removed is a low level broadband residual rather than any part of the
-event itself.}\label{fig:denoise}
+\caption{What the universal threshold removes from one cough and one non-cough
+recording.}\label{fig:denoise}
 \end{figure*}
 
 \subsection{Spectrogram formation and the frequency axis}\label{sec:design-spectro}
@@ -512,11 +536,7 @@ idea of the study, so it is worth stating plainly what each regime does and does
 establish.
 
 \begin{table*}[tbp]
-\caption{The three corpora, the way the cough label was arrived at in each, and what the
-two classes consist of. Every count is taken from the partition manifest the ingest
-scripts write, not from the figures quoted by the corpus authors. The priors are matched
-by construction so that a change in performance across regimes cannot be attributed to a
-change in class balance.}\label{tab:corpora}
+\caption{The three corpora, how the cough label was arrived at in each, and what the two classes consist of.}\label{tab:corpora}
 \small
 \begin{tabular}{@{}lp{0.11\textwidth}p{0.15\textwidth}p{0.17\textwidth}rrc@{}}
 \toprule
@@ -625,7 +645,7 @@ gradients clipped to unit norm. Training stops early when validation balanced ac
 has failed to improve for three consecutive epochs. The weights retained are those from
 the epoch with the best validation balanced accuracy, selected without any reference to
 the test partition, and the test partition is read exactly once per run, after selection.
-Computation is in single precision. Table~\ref{tab:training} gives the full settings.
+Computation is in single precision. Table~\ref{tab:training} gives the full settings, in which the batch size is the only entry that varies with architecture, for the reason given below.
 
 Three of these choices are consequences of observed failures rather than preferences.
 Gradient clipping is present because an unclipped run at the learning rate inherited from
@@ -658,12 +678,10 @@ and a remedy that raises throughput without lowering the peak was not addressing
 problem. The batch for each architecture is therefore set to leave roughly a gigabyte of
 the card unused rather than to the largest value that happens to fit, because the
 quantity being protected is a peak and the rest of the machine is in use.
-Table~\ref{tab:throughput} gives the measurements the choice rests on.
+Table~\ref{tab:throughput} gives the measurements the choice rests on. The card holds $4096$~MiB; a peak above that figure is not an error on this platform, because the excess is served from host memory, and the channels last rows show that the memory layout does not address the cause.
 
 \begin{table}[htbp]
-\caption{Training protocol. One protocol is applied identically to every run. The batch
-size is the only setting that varies with architecture, for the reason given in the
-text.}\label{tab:training}
+\caption{Training protocol, applied identically to every run.}\label{tab:training}
 \small
 \begin{tabular}{@{}lp{0.55\columnwidth}@{}}
 \toprule
@@ -684,11 +702,7 @@ Seeds & five, and three for DenseNet201 \\
 \end{table}
 
 \begin{table}[htbp]
-\caption{Training throughput and peak reserved device memory, measured per architecture
-on the card used throughout. The card holds $4096$ MiB. A peak above that figure is not
-an error on this platform: the excess is served from host memory, and the collapse in
-throughput is the only indication. The channels last rows show that the layout does not
-address the cause.}\label{tab:throughput}
+\caption{Training throughput and peak reserved device memory, per architecture.}\label{tab:throughput}
 \small
 \begin{tabular}{@{}llrrr@{}}
 \toprule
@@ -805,7 +819,7 @@ split, so the simplest explanation for a high score is excluded: the networks ar
 recognising speakers they were trained on.
 
 \begin{table*}[tbp]
-\caption{Detection on the prompt derived corpus, over held out speakers. Each row is one architecture under one input condition, averaged over the seeds in the third column, with the standard deviation across those seeds. Sensitivity is the proportion of coughs recovered and specificity the proportion of non-coughs rejected; both are reported because the class prior makes accuracy alone uninformative.}\label{tab:grid}
+\caption{Detection on the prompt derived corpus, over held out speakers.}\label{tab:grid}
 \small
 \begin{tabular}{@{}llrcccc@{}}
 \toprule
@@ -866,10 +880,10 @@ distinguishes one architecture from another.
 \subsection{Whether wavelet shrinkage helps}\label{sec:res-denoise}
 
 Table~\ref{tab:paired} tests the shrinkage on paired decisions. The result is that it does
-not help, and that where the effect reaches significance it is negative.
+not help, and that where the effect reaches significance it is negative. \figref{fig:effect} sets each effect against the spread across seeds it would have to clear to be claimable from single runs, and most of them fall on the wrong side of that line.
 
 \begin{table*}[tbp]
-\caption{Wavelet shrinkage tested on paired decisions over the prompt derived corpus. For each pair of conditions, $b$ counts the recordings the unprocessed condition classifies correctly and the shrunk condition does not, and $c$ counts the reverse; these are the only recordings McNemar's test uses. Adjusted $p$ values follow the step down procedure of Holm over the family of comparisons in this table. The final column gives the change in accuracy across seeds, which is the quantity that determines whether an effect of this size could be claimed from a single run.}\label{tab:paired}
+\caption{Wavelet shrinkage tested on paired decisions over the prompt derived corpus.}\label{tab:paired}
 \small
 \begin{tabular}{@{}llrrrllc@{}}
 \toprule
@@ -885,6 +899,12 @@ Compact & mel $\rightarrow$ wav+mel & 5 & 525 & 133 & $<10^{-4}$ & $<10^{-4}$ & 
 \bottomrule
 \end{tabular}
 \end{table*}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.98\columnwidth]{effect.pdf}
+\caption{Each shrinkage effect against the seed spread it would have to clear.}\label{fig:effect}
+\end{figure}
 
 For ResNet18 on the linear axis, $66$ recordings are classified correctly without
 shrinkage and incorrectly with it, against $37$ in the reverse direction. McNemar's test
@@ -921,11 +941,18 @@ evidence that denoising cannot help audio that is genuinely noisy.
 
 The weights retained from the grid were applied, without retraining and without adaptation
 of any kind, to the exhaustively verified evaluation split of the human annotated corpus
-at the same class prior. Table~\ref{tab:external} gives the result and
-\figref{fig:transfer} plots it against the in corpus figure for the same weights.
+at the same class prior. Table~\ref{tab:external} gives the result, its rows corresponding one to one with
+those of Table~\ref{tab:grid}, and \figref{fig:transfer} plots it against the in corpus
+figure for the same weights. In that figure the dotted line marks equal performance and
+the error bars are one standard deviation across seeds on each axis; the input
+conditions run for each architecture are plotted without being labelled separately,
+because they fall on top of one another, the choice of frequency axis and the presence
+or absence of shrinkage moving the result by far less than the change of corpus does.
+The fall itself is asymmetric: specificity is substantially retained while sensitivity
+is not, so the detectors go on rejecting non-coughs and stop recovering coughs.
 
 \begin{table*}[tbp]
-\caption{The same saved weights applied to human annotated audio at the same class prior, with no retraining and no adaptation of any kind. The rows correspond one to one with those of Table~\ref{tab:grid}. The fall is asymmetric: specificity is substantially retained while sensitivity is not, so the detectors continue to reject non-coughs and stop recovering coughs.}\label{tab:external}
+\caption{The saved weights on human annotated audio at a matched class prior, without retraining. Rows match Table~\ref{tab:grid}.}\label{tab:external}
 \small
 \begin{tabular}{@{}llrcccc@{}}
 \toprule
@@ -964,13 +991,8 @@ the negative class all change together.
 \begin{figure*}[tbp]
 \centering
 \includegraphics[width=0.74\textwidth]{transfer.pdf}
-\caption{Balanced accuracy within the prompt derived corpus against balanced accuracy for
-the same saved weights on human annotated audio, at a matched class prior. The dotted line
-marks equal performance. Error bars are one standard deviation across seeds on each axis.
-The input conditions run for each architecture are plotted without being labelled
-separately, because they fall on top of one another: the choice of frequency axis and the
-presence or absence of shrinkage move the result by far less than the change of corpus
-does.}\label{fig:transfer}
+\caption{In corpus against out of corpus balanced accuracy for the same saved
+weights.}\label{fig:transfer}
 \end{figure*}
 
 A fall of this size has two possible causes that call for quite different responses, and
@@ -984,7 +1006,7 @@ because it depends on the ordering of the scores alone and not on where the thre
 falls. Table~\ref{tab:threshold} reports it.
 
 \begin{table*}[tbp]
-\caption{Discrimination against calibration on the external set. The area under the curve depends only on the ordering of the scores, so a value that holds up while balanced accuracy falls indicates that the ranking survived and the inherited threshold did not. The final column is the balanced accuracy attainable at the best threshold for this set. That threshold is chosen on the same recordings it is scored on, so the column is an upper bound on what recalibration could recover and not an operating point anyone could reach in advance.}\label{tab:threshold}
+\caption{Discrimination against calibration on the external set.}\label{tab:threshold}
 \small
 \begin{tabular}{@{}llcccc@{}}
 \toprule
@@ -1049,10 +1071,10 @@ reporting accuracy alone would have recorded it as the second best run of that c
 Because the external negatives are annotated against the ontology, it is possible to ask
 not merely how many false positives there are but what produces them.
 Table~\ref{tab:confusion} gives the rate at which clips carrying each annotated class are
-assigned to the cough class, pooled over every ResNet18 run.
+assigned to the cough class, pooled over every ResNet18 run, and \figref{fig:falsepos} orders the classes by that rate. A clip may carry several labels, so the rows overlap and their counts do not sum to the size of the negative class.
 
 \begin{table}[htbp]
-\caption{What the detectors call a cough, by annotated class, pooled over every ResNet18 run on the external set. The third column counts the decisions in which a clip carrying that label was assigned to the cough class, and the fourth expresses it as a rate. A clip may carry several labels, so the rows overlap and their counts do not sum to the size of the negative class. The recall on clips actually labelled cough is given for comparison in the final row: several kinds of non-cough sound are assigned to the cough class more readily than coughs themselves are.}\label{tab:confusion}
+\caption{What the detectors call a cough, by annotated class, pooled over every ResNet18 run on the external set.}\label{tab:confusion}
 \small
 \begin{tabular}{@{}lrrc@{}}
 \toprule
@@ -1076,6 +1098,12 @@ Cough, as recall & 2120 & 1200 & $56.6$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.98\columnwidth]{falsepos.pdf}
+\caption{The rate at which each annotated class is assigned to the cough class.}\label{fig:falsepos}
+\end{figure}
 
 The errors are not spread evenly over the negative class, and the concentration is
 severe. Clips labelled \textsf{Sneeze} are called coughs in $67.8$ per cent of decisions.
@@ -1117,7 +1145,7 @@ with a detector. Nothing in the quantity itself marks the difference, which is w
 regime is named in the caption rather than left to be inferred from the corpus name.
 
 \begin{table*}[tbp]
-\caption{Detection on the classifier derived corpus at a matched class prior. What is measured here is agreement with the detector that produced the labels, not whether a cough is present, and the figures should be read as a property of that regime.}\label{tab:regime}
+\caption{Detection on the classifier derived corpus at a matched class prior.}\label{tab:regime}
 \small
 \begin{tabular}{@{}llrcccc@{}}
 \toprule
@@ -1420,7 +1448,7 @@ all are regenerated by the ingest scripts from the original releases.
       manuscript.
 \end{itemize}
 
-\begin{thebibliography}{32}
+\begin{thebibliography}{42}
 
 \bibitem{imran2020}
 Imran, A., Posokhova, I., Qureshi, H.N., Masood, U., Riaz, M.S., Ali, K., John, C.N., Hussain, M.I., Nabeel, M.: AI4COVID-19: AI Enabled Preliminary Diagnosis for COVID-19 from Cough Samples via an App. Informatics in Medicine Unlocked 20, 100378 (2020)
@@ -1467,8 +1495,35 @@ Sandler, M., Howard, A., Zhu, M., Zhmoginov, A., Chen, L.-C.: MobileNetV2: Inver
 \bibitem{huang2017}
 Huang, G., Liu, Z., van der Maaten, L., Weinberger, K.Q.: Densely Connected Convolutional Networks. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR), pp. 2261–2269 (2017)
 
+\bibitem{feng2024}
+Feng, Z., Markov, K., Saito, J., Matsui, T.: Neural Cough Counter: A Novel Deep Learning Approach for Cough Detection and Monitoring. IEEE Access 12, 118816–118829 (2024)
+
+\bibitem{sanchezmorillo2024}
+Sanchez-Morillo, D., Sales-Lerida, D., Priego-Torres, B., Le{\'o}n-Jim{\'e}nez, A.: Cough Detection Using Acceleration Signals and Deep Learning Techniques. Electronics 13(12), 2410 (2024)
+
+\bibitem{ayappan2025}
+Ayappan, G., Anila, S.: Automatic Detection and Prediction of COVID-19 in Cough Audio Signals Using Coronavirus Herd Immunity Optimizer Algorithm. Scientific Reports 15(1) (2025)
+
 \bibitem{zhang2026}
 Zhang, W., Teijeiro, T., Thevenot, J., Atienza, D.: Why ML-Based Cough Models Do Not Generalize: A Systematic Cross-Dataset Evaluation for Tuberculosis Screening. arXiv:2608.25846 (2026)
+
+\bibitem{zimmer2026}
+Zimmer, A.J., Espinoza-Lopez, P., Ravi, V., Sieberts, S.K., Abbasgholizadeh Rahimi, S., Pai, M., Ugarte-Gil, C., Grandjean Lapierre, S.: External Validation of Cough-Based Algorithms for Pulmonary Tuberculosis Screening from the CODA TB DREAM Challenge Using Cough Data from Peru. Scientific Reports 16(1) (2026)
+
+\bibitem{park2026}
+Park, C.H., Lee, J.C.: Domain-Adaptive Pretraining and a Leakage-Corrected Evaluation Protocol for Respiratory Sound Classification. IEEE Access 14, 151079–151100 (2026)
+
+\bibitem{niu2026}
+Niu, J., Li, P.: Reliability-Aware Transfer Learning with BEATs for Variable-Length Respiratory Sound Classification: A Patient Disjoint Evaluation in Two Public Databases. Medical Engineering and Physics 147(9), 095025 (2026)
+
+\bibitem{smailov2026}
+Smailov, N., Zhekambayeva, M., Bauyrzhankyzy, D., Yussupova, G., Mambetaliyeva, A., Nazarova, A., Mussilimov, K., Sabibolda, A.: A Reproducible Evaluation of Hybrid Spectral-Temporal Features for Four-Class Respiratory Sound Event Classification. Signals 7(5), 88 (2026)
+
+\bibitem{aquino2026}
+Aquino-Garc{\'\i}a, A.M., P{\'e}rez-Espinosa, H., Andreu-Perez, J., Rodr{\'\i}guez Gonz{\'a}lez, A.Y.: Audio-Based Screening of Respiratory Diseases Using Machine Learning: A Methodological Framework Evaluated on a Clinically Validated COVID-19 Cough Dataset. Machine Learning and Knowledge Extraction 8(3), 80 (2026)
+
+\bibitem{wu2026}
+Wu, M., Ren, S., Huang, M.: Low-Rank Adversarial Adaptation for Cross-Device Respiratory Sound Classification. IEICE Transactions on Information and Systems (2026)
 
 \bibitem{vocalsound2022}
 Gong, Y., Yu, J., Glass, J.: VocalSound: A Dataset for Improving Human Vocal Sounds Recognition. In: Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) (2022)
@@ -1484,6 +1539,9 @@ Johnstone, I.M., Silverman, B.W.: Empirical Bayes Selection of Wavelet Threshold
 
 \bibitem{mallat1989}
 Mallat, S.G.: A Theory for Multiresolution Signal Decomposition: The Wavelet Representation. IEEE Transactions on Pattern Analysis and Machine Intelligence 11(7), 674–693 (1989)
+
+\bibitem{lim2026}
+Lim, C.C., Toh, L.B., Syahirul, M., Ali, A.M., Yik, J.T.L.: Minimal-Preprocessing Paradigm for Robust COVID-19 Detection from Cough Audio Using Deep Learning. Scientific Reports (2026)
 
 \bibitem{stevens1937}
 Stevens, S.S., Volkmann, J., Newman, E.B.: A Scale for the Measurement of the Psychological Magnitude Pitch. The Journal of the Acoustical Society of America 8(3), 185–190 (1937)

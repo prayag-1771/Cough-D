@@ -18,11 +18,7 @@ idea of the study, so it is worth stating plainly what each regime does and does
 establish.
 
 \begin{table*}[tbp]
-\caption{The three corpora, the way the cough label was arrived at in each, and what the
-two classes consist of. Every count is taken from the partition manifest the ingest
-scripts write, not from the figures quoted by the corpus authors. The priors are matched
-by construction so that a change in performance across regimes cannot be attributed to a
-change in class balance.}\label{tab:corpora}
+\caption{The three corpora, how the cough label was arrived at in each, and what the two classes consist of.}\label{tab:corpora}
 \small
 \begin{tabular}{@{}lp{0.11\textwidth}p{0.15\textwidth}p{0.17\textwidth}rrc@{}}
 \toprule
@@ -131,7 +127,7 @@ gradients clipped to unit norm. Training stops early when validation balanced ac
 has failed to improve for three consecutive epochs. The weights retained are those from
 the epoch with the best validation balanced accuracy, selected without any reference to
 the test partition, and the test partition is read exactly once per run, after selection.
-Computation is in single precision. Table~\ref{tab:training} gives the full settings.
+Computation is in single precision. Table~\ref{tab:training} gives the full settings, in which the batch size is the only entry that varies with architecture, for the reason given below.
 
 Three of these choices are consequences of observed failures rather than preferences.
 Gradient clipping is present because an unclipped run at the learning rate inherited from
@@ -164,12 +160,10 @@ and a remedy that raises throughput without lowering the peak was not addressing
 problem. The batch for each architecture is therefore set to leave roughly a gigabyte of
 the card unused rather than to the largest value that happens to fit, because the
 quantity being protected is a peak and the rest of the machine is in use.
-Table~\ref{tab:throughput} gives the measurements the choice rests on.
+Table~\ref{tab:throughput} gives the measurements the choice rests on. The card holds $4096$~MiB; a peak above that figure is not an error on this platform, because the excess is served from host memory, and the channels last rows show that the memory layout does not address the cause.
 
 \begin{table}[htbp]
-\caption{Training protocol. One protocol is applied identically to every run. The batch
-size is the only setting that varies with architecture, for the reason given in the
-text.}\label{tab:training}
+\caption{Training protocol, applied identically to every run.}\label{tab:training}
 \small
 \begin{tabular}{@{}lp{0.55\columnwidth}@{}}
 \toprule
@@ -190,11 +184,7 @@ Seeds & five, and three for DenseNet201 \\
 \end{table}
 
 \begin{table}[htbp]
-\caption{Training throughput and peak reserved device memory, measured per architecture
-on the card used throughout. The card holds $4096$ MiB. A peak above that figure is not
-an error on this platform: the excess is served from host memory, and the collapse in
-throughput is the only indication. The channels last rows show that the layout does not
-address the cause.}\label{tab:throughput}
+\caption{Training throughput and peak reserved device memory, per architecture.}\label{tab:throughput}
 \small
 \begin{tabular}{@{}llrrr@{}}
 \toprule

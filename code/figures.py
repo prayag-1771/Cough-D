@@ -18,6 +18,7 @@ import csv
 import glob
 import io
 import os
+import re
 import statistics as st
 import sys
 import zipfile
@@ -34,6 +35,7 @@ import spectro
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIGS = os.path.join(ROOT, 'manuscript', 'figs')
+MS = os.path.join(ROOT, 'manuscript')
 ARCHIVE = os.path.join(ROOT, 'data', 'coughvid_v3', 'public_dataset_v3.zip')
 META = os.path.join(ROOT, 'data', 'coughvid_v3', 'coughvid_20211012',
                     'metadata_compiled.csv')
@@ -306,11 +308,118 @@ def fig_transfer():
     print('  wrote %s' % shortpath(out))
 
 
+def fig_shrinkage():
+    """How much signal power each shrinkage rule removes, over the audit set.
+
+    The null result on denoising is easier to accept once it is clear how
+    little the rules take out, and the quantity is already measured, so it is
+    worth a figure rather than a sentence.
+    """
+    path = os.path.join(ROOT, 'results', 'shrinkage.csv')
+    if not os.path.exists(path):
+        print('  shrinkage: results/shrinkage.csv absent, skipped')
+        return
+    uni, eb = [], []
+    for r in csv.DictReader(io.open(path, encoding='utf-8')):
+        try:
+            uni.append(100.0 * float(r['visu']))
+            eb.append(100.0 * float(r['bayes']))
+        except (KeyError, ValueError):
+            continue
+    if not uni:
+        print('  shrinkage: no usable rows, skipped')
+        return
+    fig, ax = plt.subplots(figsize=(3.3, 2.3))
+    for vals, lab, col in ((uni, 'universal threshold', KEPT),
+                           (eb, 'empirical Bayes', '#c03028')):
+        v = sorted(x for x in vals if x > 0)
+        if not v:
+            continue
+        y = [100.0 * (i + 1) / len(v) for i in range(len(v))]
+        ax.plot(v, y, color=col, lw=0.9, label=lab)
+    ax.set_xscale('log')
+    ax.set_xlabel('signal power removed (per cent)')
+    ax.set_ylabel('recordings below (per cent)')
+    ax.legend(frameon=False, fontsize=6, loc='lower right')
+    out = os.path.join(OUTDIR or FIGS, 'shrinkage.' + EXT)
+    fig.savefig(out, bbox_inches='tight')
+    plt.close(fig)
+    print('  wrote %s' % shortpath(out))
+
+
+def fig_falsepos():
+    """The rate at which each annotated class is called a cough."""
+    path = os.path.join(MS, 'tab_confusion.tex')
+    if not os.path.exists(path):
+        print('  falsepos: tab_confusion.tex absent, skipped')
+        return
+    rows = []
+    for line in io.open(path, encoding='utf-8'):
+        m = re.match(r'([A-Z][A-Za-z ]+?) & (\d+) & (\d+) & \$([\d.]+)\$',
+                     line.strip())
+        if m:
+            rows.append((m.group(1).strip(), float(m.group(4))))
+    if not rows:
+        print('  falsepos: no rows parsed, skipped')
+        return
+    rows.sort(key=lambda r: r[1])
+    fig, ax = plt.subplots(figsize=(3.3, 0.22 * len(rows) + 0.7))
+    names = [r[0] for r in rows]
+    vals = [r[1] for r in rows]
+    cough = [i for i, n in enumerate(names) if n.lower().startswith('cough')]
+    cols = ['#c03028' if i in cough else KEPT for i in range(len(rows))]
+    ax.barh(range(len(rows)), vals, color=cols, height=0.65)
+    ax.set_yticks(range(len(rows)))
+    ax.set_yticklabels(names, fontsize=6)
+    ax.set_xlabel('decisions assigning the clip to cough (per cent)')
+    for sp in ('top', 'right'):
+        ax.spines[sp].set_visible(False)
+    out = os.path.join(OUTDIR or FIGS, 'falsepos.' + EXT)
+    fig.savefig(out, bbox_inches='tight')
+    plt.close(fig)
+    print('  wrote %s' % shortpath(out))
+
+
+def fig_effect():
+    """Each shrinkage effect against the seed spread it has to clear."""
+    path = os.path.join(ROOT, 'results', 'paired.csv')
+    if not os.path.exists(path):
+        print('  effect: results/paired.csv absent, skipped')
+        return
+    pts = []
+    for r in csv.DictReader(io.open(path, encoding='utf-8')):
+        try:
+            pts.append((abs(float(r['accuracy_change'])),
+                        float(r['change_sd']),
+                        float(r['p_adjusted'])))
+        except (KeyError, ValueError):
+            continue
+    if not pts:
+        print('  effect: no usable rows, skipped')
+        return
+    fig, ax = plt.subplots(figsize=(3.3, 2.5))
+    hi = max(max(p[0] for p in pts), max(p[1] for p in pts)) * 1.15
+    ax.plot([0, hi], [0, hi], ls=':', lw=0.7, color='#888888')
+    for eff, sd, padj in pts:
+        sig = padj < 0.05
+        ax.plot([eff], [sd], 's' if sig else 'o', ms=4.5,
+                color='#c03028' if sig else KEPT, mfc='none', lw=0.8)
+    ax.set_xlim(0, hi)
+    ax.set_ylim(0, hi)
+    ax.set_xlabel('size of the effect (accuracy points)')
+    ax.set_ylabel('spread across seeds (points)')
+    out = os.path.join(OUTDIR or FIGS, 'effect.' + EXT)
+    fig.savefig(out, bbox_inches='tight')
+    plt.close(fig)
+    print('  wrote %s' % shortpath(out))
+
+
 def main():
     global EXT, OUTDIR
     ap = argparse.ArgumentParser()
     ap.add_argument('--what', default='all',
-                    choices=('all', 'denoise', 'transfer', 'shrinkage'))
+                    choices=('all', 'denoise', 'transfer', 'shrinkage',
+                             'power', 'falsepos', 'effect'))
     ap.add_argument('--work', default=None)
     ap.add_argument('--ext', default='pdf')
     ap.add_argument('--outdir', default=None)
@@ -329,6 +438,12 @@ def main():
         fig_transfer()
     if a.what in ('all', 'shrinkage'):
         audit_shrinkage(work, a.n)
+    if a.what in ('all', 'power'):
+        fig_shrinkage()
+    if a.what in ('all', 'falsepos'):
+        fig_falsepos()
+    if a.what in ('all', 'effect'):
+        fig_effect()
 
 
 if __name__ == '__main__':

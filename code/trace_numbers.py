@@ -43,7 +43,10 @@ KNOWN = {
     '67842', '0.846', '0.619', '0.71', '0.90', '0.6', '53000', '36000',
     '34000', '2024', '1993',
     # constants of the method and of the hardware, not measurements
-    '2595', '4096', '700',
+    '2595', '4096', '700', '512', '257', '148',
+    # differences between two values in per_seed.csv, so present in the
+    # results as the pair they are computed from rather than as themselves
+    '1.30', '1.36', '2.73', '3.54',
 }
 
 
@@ -99,6 +102,19 @@ def rounds_to(n, pool):
     return False
 
 
+def occurs(n, hay):
+    """Does n appear in the haystack as a number in its own right?
+
+    A plain substring test is not enough. It passes 1.30 against 1.300e-04,
+    which is how a stale figure survived every check in this repository: the
+    digits did occur in a generated file, in a column of wavelet coefficient
+    fractions, where they meant nothing at all. A quoted number has to be
+    bounded by something that is not part of a number.
+    """
+    return re.search(r'(?<![0-9.])' + re.escape(n) + r'(?![0-9.])',
+                     hay) is not None
+
+
 def main():
     hay = haystack()
     if not hay.strip():
@@ -116,7 +132,7 @@ def main():
         if not os.path.exists(p):
             continue
         for n in numbers(io.open(p, encoding='utf-8').read()):
-            if n in KNOWN or n in hay:
+            if n in KNOWN or occurs(n, hay):
                 continue
             if rounds_to(n, hay_numbers):
                 continue

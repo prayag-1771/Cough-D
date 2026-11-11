@@ -38,7 +38,11 @@ Within this strand, the specific pipeline of interest is the one that converts a
 recording into a spectrogram image and hands it to a convolutional network pretrained on
 photographs. That approach reported $98.18$ per cent accuracy on a mel spectrogram
 representation of cough audio~\cite{zhou2021}, and variants of it supply the architectures
-used here~\cite{he2016,sandler2018,huang2017}.
+used here~\cite{he2016,sandler2018,huang2017}. Detection of the event itself continues to be
+pursued in this form and in others, with recent work reporting neural cough
+counting from audio~\cite{feng2024}, detection from acceleration signals in
+place of sound~\cite{sanchezmorillo2024}, and screening pipelines built on
+cough audio for {COVID-19}~\cite{ayappan2025}.
 
 \subsection{How the reported performance was measured}\label{sec:rel-eval}
 
@@ -76,6 +80,18 @@ label is a thresholded detector score, a model is measured on its agreement with
 detector and not on whether a cough is present, and this distinction is frequently left
 implicit. It cannot be resolved by better modelling, only by stating the regime and, where
 possible, comparing across regimes.
+
+The practices this strand calls for have begun to appear in the literature it
+examines. External validation of cough based screening algorithms on data
+collected independently of the development corpus has been reported for
+tuberculosis~\cite{zimmer2026}; an evaluation protocol corrected for leakage
+has been proposed for respiratory sound classification~\cite{park2026}; a
+patient disjoint partition has been applied across two public
+databases~\cite{niu2026}; a feature comparison has been published with
+reproduction as an explicit objective~\cite{smailov2026}; and a methodological
+framework has been assessed on a corpus whose labels were clinically
+validated~\cite{aquino2026}. The recording device has likewise been treated as
+a distribution shift in its own right rather than as noise~\cite{wu2026}.
 
 \subsection{The negative class and what it determines}\label{sec:rel-neg}
 
@@ -133,7 +149,9 @@ and no measure of seed variation. The work this paper extends illustrates all th
 baseline and denoised conditions differ in architecture, in pretraining, in frequency axis
 and in sample rate simultaneously, so no cause can be assigned to the difference between
 them; its text describes soft thresholding while the routine it calls applies an empirical
-Bayes posterior median by default; and its conclusion rests on one run per condition.
+Bayes posterior median by default; and its conclusion rests on one run per condition. How much preprocessing is warranted remains open, and a
+minimal preprocessing paradigm has recently been argued for detection from
+cough audio~\cite{lim2026}.
 
 The present work therefore supplies what this configuration of strands leaves absent: a
 denoising comparison under a named shrinkage rule, with the architecture, the frequency

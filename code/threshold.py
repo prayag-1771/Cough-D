@@ -147,15 +147,8 @@ def main():
         # float. A single column class sets a starred float exactly
         # as it sets an ordinary one, so one source serves both.
         '\\begin{table*}[tbp]',
-        '\\caption{Discrimination against calibration on the external set. The '
-        'area under the curve depends only on the ordering of the scores, so a '
-        'value that holds up while balanced accuracy falls indicates that the '
-        'ranking survived and the inherited threshold did not. The final '
-        'column is the balanced accuracy attainable at the best threshold for '
-        'this set. That threshold is chosen on the same recordings it is '
-        'scored on, so the column is an upper bound on what recalibration '
-        'could recover and not an operating point anyone could reach in '
-        'advance.}\\label{tab:threshold}',
+        '\\caption{Discrimination against calibration on the external '
+        'set.}\\label{tab:threshold}',
         '\\small',
         '\\begin{tabular}{@{}llcccc@{}}',
         '\\toprule',

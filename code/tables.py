@@ -363,40 +363,22 @@ def main():
 
     write('tab_grid.tex', table(
         collect(os.path.join(ROOT, 'runs_coswara')), 'tab:grid',
-        'Detection on the prompt derived corpus, over held out speakers. Each '
-        'row is one architecture under one input condition, averaged over the '
-        'seeds in the third column, with the standard deviation across those '
-        'seeds. Sensitivity is the proportion of coughs recovered and '
-        'specificity the proportion of non-coughs rejected; both are reported '
-        'because the class prior makes accuracy alone uninformative.'))
+        'Detection on the prompt derived corpus, over held out speakers.'))
 
     write('tab_external.tex', table(
         collect(os.path.join(ROOT, 'runs_fsd50k')), 'tab:external',
-        'The same saved weights applied to human annotated audio at the same '
-        'class prior, with no retraining and no adaptation of any kind. The '
-        'rows correspond one to one with those of Table~\\ref{tab:grid}. The '
-        'fall is asymmetric: specificity is substantially retained while '
-        'sensitivity is not, so the detectors continue to reject non-coughs '
-        'and stop recovering coughs.'))
+        'The saved weights on human annotated audio at a matched class '
+        'prior, without retraining. Rows match Table~\\ref{tab:grid}.'))
 
     write('tab_regime.tex', table(
         collect(os.path.join(ROOT, 'runs_coughvid')), 'tab:regime',
-        'Detection on the classifier derived corpus at a matched class prior. '
-        'What is measured here is agreement with the detector that produced '
-        'the labels, not whether a cough is present, and the figures should '
-        'be read as a property of that regime.'))
+        'Detection on the classifier derived corpus at a matched class '
+        'prior.'))
 
     write('tab_paired.tex', paired_table(
         os.path.join(ROOT, 'runs_coswara'), 'tab:paired',
-        'Wavelet shrinkage tested on paired decisions over the prompt derived '
-        'corpus. For each pair of conditions, $b$ counts the recordings the '
-        'unprocessed condition classifies correctly and the shrunk condition '
-        'does not, and $c$ counts the reverse; these are the only recordings '
-        'McNemar\'s test uses. Adjusted $p$ values follow the step down '
-        'procedure of Holm over the family of comparisons in this table. The '
-        'final column gives the change in accuracy across seeds, which is the '
-        'quantity that determines whether an effect of this size could be '
-        'claimed from a single run.'))
+        'Wavelet shrinkage tested on paired decisions over the prompt '
+        'derived corpus.'))
 
 
 if __name__ == '__main__':

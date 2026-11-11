@@ -57,9 +57,15 @@ distinguishes one architecture from another.
 \subsection{Whether wavelet shrinkage helps}\label{sec:res-denoise}
 
 Table~\ref{tab:paired} tests the shrinkage on paired decisions. The result is that it does
-not help, and that where the effect reaches significance it is negative.
+not help, and that where the effect reaches significance it is negative. \figref{fig:effect} sets each effect against the spread across seeds it would have to clear to be claimable from single runs, and most of them fall on the wrong side of that line.
 
 \input{tab_paired}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.98\columnwidth]{effect.pdf}
+\caption{Each shrinkage effect against the seed spread it would have to clear.}\label{fig:effect}
+\end{figure}
 
 For ResNet18 on the linear axis, $66$ recordings are classified correctly without
 shrinkage and incorrectly with it, against $37$ in the reverse direction. McNemar's test
@@ -96,8 +102,15 @@ evidence that denoising cannot help audio that is genuinely noisy.
 
 The weights retained from the grid were applied, without retraining and without adaptation
 of any kind, to the exhaustively verified evaluation split of the human annotated corpus
-at the same class prior. Table~\ref{tab:external} gives the result and
-\figref{fig:transfer} plots it against the in corpus figure for the same weights.
+at the same class prior. Table~\ref{tab:external} gives the result, its rows corresponding one to one with
+those of Table~\ref{tab:grid}, and \figref{fig:transfer} plots it against the in corpus
+figure for the same weights. In that figure the dotted line marks equal performance and
+the error bars are one standard deviation across seeds on each axis; the input
+conditions run for each architecture are plotted without being labelled separately,
+because they fall on top of one another, the choice of frequency axis and the presence
+or absence of shrinkage moving the result by far less than the change of corpus does.
+The fall itself is asymmetric: specificity is substantially retained while sensitivity
+is not, so the detectors go on rejecting non-coughs and stop recovering coughs.
 
 \input{tab_external}
 
@@ -113,13 +126,8 @@ the negative class all change together.
 \begin{figure*}[tbp]
 \centering
 \includegraphics[width=0.74\textwidth]{transfer.pdf}
-\caption{Balanced accuracy within the prompt derived corpus against balanced accuracy for
-the same saved weights on human annotated audio, at a matched class prior. The dotted line
-marks equal performance. Error bars are one standard deviation across seeds on each axis.
-The input conditions run for each architecture are plotted without being labelled
-separately, because they fall on top of one another: the choice of frequency axis and the
-presence or absence of shrinkage move the result by far less than the change of corpus
-does.}\label{fig:transfer}
+\caption{In corpus against out of corpus balanced accuracy for the same saved
+weights.}\label{fig:transfer}
 \end{figure*}
 
 A fall of this size has two possible causes that call for quite different responses, and
@@ -170,9 +178,15 @@ reporting accuracy alone would have recorded it as the second best run of that c
 Because the external negatives are annotated against the ontology, it is possible to ask
 not merely how many false positives there are but what produces them.
 Table~\ref{tab:confusion} gives the rate at which clips carrying each annotated class are
-assigned to the cough class, pooled over every ResNet18 run.
+assigned to the cough class, pooled over every ResNet18 run, and \figref{fig:falsepos} orders the classes by that rate. A clip may carry several labels, so the rows overlap and their counts do not sum to the size of the negative class.
 
 \input{tab_confusion}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.98\columnwidth]{falsepos.pdf}
+\caption{The rate at which each annotated class is assigned to the cough class.}\label{fig:falsepos}
+\end{figure}
 
 The errors are not spread evenly over the negative class, and the concentration is
 severe. Clips labelled \textsf{Sneeze} are called coughs in $67.8$ per cent of decisions.

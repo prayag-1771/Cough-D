@@ -111,15 +111,8 @@ def main():
     head = [
         '\\begin{table}[htbp]',
         '\\caption{What the detectors call a cough, by annotated class, '
-        'pooled over every %s run on the external set. The third column '
-        'counts the decisions in which a clip carrying that label was '
-        'assigned to the cough class, and the fourth expresses it as a rate. '
-        'A clip may carry several labels, so the rows overlap and their '
-        'counts do not sum to the size of the negative class. The recall on '
-        'clips actually labelled cough is given for comparison in the final '
-        'row: several kinds of non-cough sound are assigned to the cough '
-        'class more readily than coughs themselves '
-        'are.}\\label{tab:confusion}' % ARCH.replace('resnet18', 'ResNet18'),
+        'pooled over every %s run on the external '
+        'set.}\\label{tab:confusion}' % ARCH.replace('resnet18', 'ResNet18'),
         '\\small',
         '\\begin{tabular}{@{}lrrc@{}}',
         '\\toprule',
