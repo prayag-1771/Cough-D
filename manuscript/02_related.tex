@@ -151,9 +151,14 @@ and no measure of seed variation. The work this paper extends illustrates all th
 baseline and denoised conditions differ in architecture, in pretraining, in frequency axis
 and in sample rate simultaneously, so no cause can be assigned to the difference between
 them; its text describes soft thresholding while the routine it calls applies an empirical
-Bayes posterior median by default; and its conclusion rests on one run per condition. How much preprocessing is warranted remains open, and a
-minimal preprocessing paradigm has recently been argued for detection from
-cough audio~\cite{lim2026}.
+Bayes posterior median by default; and its conclusion rests on one run per condition. How much preprocessing is warranted remains open, and the
+question has lately been put the other way round: a minimal preprocessing
+paradigm has been argued for detection from cough audio, on the finding that
+transforming without additional filtering outperformed conventional noise
+reduction across several convolutional architectures, and on the reading that
+aggressive preprocessing may suppress the pathological detail it is meant to
+expose~\cite{lim2026}. The present work reaches the same place from the
+opposite direction, by measuring how little the shrinkage removes.
 
 The present work therefore supplies what this configuration of strands leaves absent: a
 denoising comparison under a named shrinkage rule, with the architecture, the frequency
