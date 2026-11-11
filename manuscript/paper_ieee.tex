@@ -944,11 +944,12 @@ The weights retained from the grid were applied, without retraining and without 
 of any kind, to the exhaustively verified evaluation split of the human annotated corpus
 at the same class prior. Table~\ref{tab:external} gives the result, its rows corresponding one to one with
 those of Table~\ref{tab:grid}, and \figref{fig:transfer} plots it against the in corpus
-figure for the same weights. In that figure the dotted line marks equal performance and
-the error bars are one standard deviation across seeds on each axis; the input
-conditions run for each architecture are plotted without being labelled separately,
-because they fall on top of one another, the choice of frequency axis and the presence
-or absence of shrinkage moving the result by far less than the change of corpus does.
+figure for the same weights. In that figure each configuration is a line from what it
+scores inside the corpus to what the same weights score outside it, with error bars
+of one standard deviation across seeds at each end. The lines run close to
+parallel. The input conditions are not labelled separately because they fall on
+top of one another, the choice of frequency axis and the presence or absence of
+shrinkage moving the result by far less than the change of corpus does.
 The fall itself is asymmetric: specificity is substantially retained while sensitivity
 is not, so the detectors go on rejecting non-coughs and stop recovering coughs.
 
@@ -992,7 +993,7 @@ the negative class all change together.
 \begin{figure*}[tbp]
 \centering
 \includegraphics[width=0.74\textwidth]{transfer.pdf}
-\caption{In corpus against out of corpus balanced accuracy for the same saved
+\caption{Balanced accuracy inside the corpus and outside it, for the same saved
 weights.}\label{fig:transfer}
 \end{figure*}
 
