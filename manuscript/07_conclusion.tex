@@ -5,33 +5,30 @@ only the provenance of the label shows that the accuracy ordinarily reported for
 detection is a property of the evaluation as much as of the detector. A ResNet18 that
 reaches $98.60$ per cent balanced accuracy on held out speakers in a prompted corpus
 reaches $70.18$ per cent on human annotated audio at the same class prior, with no
-retraining between the two measurements. The fall is not even: specificity declines from
-$99.48$ to $84.32$ per cent while sensitivity collapses from $97.72$ to $56.04$, so the
-detector does not stop working so much as stop finding coughs, and a single accuracy
+retraining between the two measurements, and the fall is not even: specificity declines
+from $99.48$ to $84.32$ per cent while sensitivity collapses from $97.72$ to $56.04$, so
+the detector does not stop working so much as stop finding coughs, and a single accuracy
 figure hides which of the two has happened. The loss is one of discrimination and not of
-calibration, which matters because it closes off the cheapest response: the area under the
-curve falls from $0.998$ to $0.749$, and the best threshold available on the external set
-recovers only $1.7$ points of balanced accuracy, so collecting a little target data and
-moving the operating point would not retrieve what was lost.
-
-What the detectors confuse identifies the cause. Clips annotated as sneezes are assigned
-to the cough class in $67.8$ per cent of decisions, a higher rate than clips that are
-genuinely coughs achieve, and the prompted corpus holds no forced expiration other than
-coughing, so that distinction was never one the networks were required to learn. It is the
-composition of the negative class, rather than the capacity of the architecture, that set
-the figure the prompted corpus reports.
-
-Wavelet shrinkage does not close the gap either, and the reason is measurable rather than
-conjectural: on recordings of this quality the universal threshold removes a median of
-$0.67$ per cent of signal power, so the two input conditions it produces are very nearly
-the same images and no difference between them was available to be found. The classifier
-derived regime cannot settle the question either, because its published selection is not
-reproducible by any threshold on the score it supplies and its expert annotated subset is
-drawn overwhelmingly from the region where that score was already confident, which leaves
-the label error rate of the corpus unestimable from what it publishes.
-
-None of this says that cough detection is unachievable, and the networks examined here fit
-the prompted corpus almost perfectly from a speaker disjoint partition. It says that the
-experiment which would have revealed the limitation costs a few hours of inference on a
-corpus nobody trained on, that it was available throughout, and that reporting the number
-obtained without it describes the corpus rather than the task.
+calibration, which matters because it closes off the cheapest response, the area under the
+curve falling from $0.998$ to $0.749$ and the best threshold available on the external set
+recovering only $1.7$ points of balanced accuracy, so collecting a little target data and
+moving the operating point would not retrieve what was lost. What the detectors confuse
+identifies the cause: clips annotated as sneezes are assigned to the cough class in $67.8$
+per cent of decisions, a higher rate than clips that are genuinely coughs achieve, and the
+prompted corpus holds no forced expiration other than coughing, so that distinction was
+never one the networks were required to learn, which makes the composition of the negative
+class rather than the capacity of the architecture the thing that set the figure the
+prompted corpus reports. Wavelet shrinkage does not close the gap either, and the reason
+is measurable rather than conjectural, since on recordings of this quality the universal
+threshold removes a median of $0.67$ per cent of the signal power, so the two input
+conditions it produces are very nearly the same images and no difference between them was
+available to be found. The classifier derived regime cannot settle the question either,
+because its published selection is not reproducible by any threshold on the score it
+supplies and its expert annotated subset is drawn overwhelmingly from the region where
+that score was already confident, which leaves the label error rate of the corpus
+unestimable from what it publishes. None of this says that cough detection is
+unachievable, and the networks examined here fit the prompted corpus almost perfectly from
+a speaker disjoint partition; it says that the experiment which would have revealed the
+limitation costs a few hours of inference on a corpus nobody trained on, that it was
+available throughout, and that reporting the number obtained without it describes the
+corpus rather than the task.
