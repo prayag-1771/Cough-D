@@ -113,10 +113,18 @@ def build(venue, make_zip=False):
         return 1
 
     dest = os.path.join(OUT, VENUES[venue]['dir'])
-    # Rewritten from scratch each time, so a file that has left the
-    # manuscript does not linger here and get uploaded.
+    # The files this script wrote last time are replaced, so one that has
+    # left the manuscript does not linger here and get uploaded. Anything
+    # else in the folder is left alone: a hand written draft or a figure put
+    # there by someone else is not this script's to delete, and wiping the
+    # folder outright once put a file of that kind at risk.
+    keep = set(f.replace('/', os.sep) for f in files)
     if os.path.isdir(dest):
-        shutil.rmtree(dest)
+        for base, _dirs, names in os.walk(dest):
+            for n in names:
+                full = os.path.join(base, n)
+                if os.path.relpath(full, dest) in keep:
+                    os.remove(full)
     for f in files:
         target = os.path.join(dest, f.replace('/', os.sep))
         os.makedirs(os.path.dirname(target), exist_ok=True)
