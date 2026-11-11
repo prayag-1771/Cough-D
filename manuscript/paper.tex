@@ -54,24 +54,25 @@ across three label regimes}
 \orgname{Vellore Institute of Technology}, \orgaddress{\city{Chennai},
 \state{Tamil Nadu}, \country{India}}}
 
-\abstract{Reported accuracies for automatic cough detection sit in the high nineties, yet audits find
-such models are rarely validated outside their development corpus and often separated by a
-confound. Which factor is responsible has not been isolated, because label provenance,
-negative class difficulty and seed variation ordinarily move together. This study fixes the
-preprocessing, architecture and training protocol, and varies only the provenance of the
-label. Three corpora are used, labelled respectively by a participant's instruction, by a
-human listener against an audio ontology, and by another classifier's score. The class
-prior is matched in all three, partitions are speaker disjoint wherever an identifier
-permits, every condition runs under five seeds, and conditions are compared by a paired
-test on per recording decisions. Within the prompted corpus a residual network reaches 98.6
-per cent balanced accuracy on held out speakers. The same weights, applied without
-retraining to human annotated audio at the same prior, reach 70.2 per cent: specificity
-falls to 84.3 per cent, sensitivity to 56.0. The loss is one of discrimination rather than
-calibration, the area under the curve falling from 0.998 to 0.749, so moving the threshold
-recovers little of it. Sneezes are called coughs more often than coughs are, locating the
-failure in a negative class holding no forced expirations. Wavelet shrinkage does not help,
-removing a median of 0.67 per cent of signal power. The external set is small and single
-source, so the fall is better established in direction than in size.}
+\abstract{Reported accuracies for cough detection sit in the high nineties, yet such
+models are rarely validated outside their development corpus. The responsible factor has
+not been isolated, because label provenance, negative class difficulty and seed variation
+ordinarily move together. This study fixes preprocessing, architecture and training
+protocol, and varies only label provenance. Three corpora are used, labelled respectively
+by a participant's instruction, by another classifier's score, and by a human listener
+against an audio ontology. The class prior is matched in all three, partitions are speaker
+disjoint wherever an identifier permits, every condition runs under five seeds, and
+conditions are compared by a paired test on per recording decisions. Within the prompted
+corpus a residual network reaches 98.6 per cent balanced accuracy on held out speakers.
+The same weights, applied without retraining to human annotated audio at the same prior,
+reach 70.2 per cent: specificity falls to 84.3 per cent and sensitivity to 56.0. The loss
+is one of discrimination rather than calibration, the area under the curve falling from
+0.998 to 0.749, so moving the threshold recovers little of it. Sneezes are assigned to the
+cough class more often than coughs are, locating the failure in a negative class holding
+no forced expiration. Wavelet shrinkage does not help, removing a median of 0.67 per cent
+of signal power. The classifier labelled corpus cannot be reproduced from the score it
+publishes. The external set is small and single source, so the fall is better established
+in direction than size.}
 
 \keywords{Audio classification, dataset bias, external validation, label provenance, respiratory
 sound analysis, wavelet shrinkage}
@@ -170,7 +171,10 @@ The specific contributions are the following.
       detect an effect of the size being claimed for it. Measured against the spread across
       seeds, the gain does not survive: the largest improvement observed anywhere is
       $2.73$ accuracy points, with a spread of $3.54$ points across the seeds it
-      is averaged over.
+      is averaged over. The mechanism is measured rather than inferred: on
+      recordings of this quality the universal threshold removes a median of
+      $0.67$ per cent of the signal power, so the two conditions it produces are
+      very nearly the same images.
 
 \item A reproducibility finding about the classifier derived corpus. The recording
       selection used by the work this study extends cannot be reproduced from the corpus as
@@ -1364,29 +1368,38 @@ and both limit what any study built on them can establish.
 Holding the preprocessing, the architecture and the training protocol fixed and varying
 only the provenance of the label shows that the accuracy ordinarily reported for cough
 detection is a property of the evaluation as much as of the detector. A ResNet18 that
-recovers $97.72$ per cent of coughs from held out speakers in a prompted corpus recovers
-$56.04$ per cent of them from human annotated audio at the same class prior, with no
-retraining between the two measurements, while its specificity falls far less; the
+reaches $98.60$ per cent balanced accuracy on held out speakers in a prompted corpus
+reaches $70.18$ per cent on human annotated audio at the same class prior, with no
+retraining between the two measurements. The fall is not even: specificity declines from
+$99.48$ to $84.32$ per cent while sensitivity collapses from $97.72$ to $56.04$, so the
 detector does not stop working so much as stop finding coughs, and a single accuracy
 figure hides which of the two has happened. The loss is one of discrimination and not of
-calibration, which matters because it closes off the cheapest response: the area under
-the curve falls from $0.998$ to $0.749$, and the best threshold available on the external
-set recovers only $1.7$ points of balanced accuracy, so collecting a little target data
-and moving the operating point would not retrieve what was lost. Wavelet shrinkage does
-not close the gap either, and
-the reason is measurable rather than conjectural: on recordings of this quality the
-universal threshold removes a median of $0.67$ per cent of signal power, so the two input
-conditions it produces are very nearly the same images and no difference between them was
-available to be found. The classifier derived regime cannot settle the question either,
-because its published selection is not reproducible by any threshold on the score it
-supplies and its expert annotated subset is drawn overwhelmingly from the region where
-that score was already confident, which leaves the label error rate of the corpus
-unestimable from what it publishes. None of this says that cough detection is
-unachievable, and the networks examined here fit the prompted corpus almost perfectly from
-a speaker disjoint partition. It says that the experiment which would have revealed the
-limitation costs a few hours of inference on a corpus nobody trained on, that it was
-available throughout, and that reporting the number obtained without it describes the
-corpus rather than the task.
+calibration, which matters because it closes off the cheapest response: the area under the
+curve falls from $0.998$ to $0.749$, and the best threshold available on the external set
+recovers only $1.7$ points of balanced accuracy, so collecting a little target data and
+moving the operating point would not retrieve what was lost.
+
+What the detectors confuse identifies the cause. Clips annotated as sneezes are assigned
+to the cough class in $67.8$ per cent of decisions, a higher rate than clips that are
+genuinely coughs achieve, and the prompted corpus holds no forced expiration other than
+coughing, so that distinction was never one the networks were required to learn. It is the
+composition of the negative class, rather than the capacity of the architecture, that set
+the figure the prompted corpus reports.
+
+Wavelet shrinkage does not close the gap either, and the reason is measurable rather than
+conjectural: on recordings of this quality the universal threshold removes a median of
+$0.67$ per cent of signal power, so the two input conditions it produces are very nearly
+the same images and no difference between them was available to be found. The classifier
+derived regime cannot settle the question either, because its published selection is not
+reproducible by any threshold on the score it supplies and its expert annotated subset is
+drawn overwhelmingly from the region where that score was already confident, which leaves
+the label error rate of the corpus unestimable from what it publishes.
+
+None of this says that cough detection is unachievable, and the networks examined here fit
+the prompted corpus almost perfectly from a speaker disjoint partition. It says that the
+experiment which would have revealed the limitation costs a few hours of inference on a
+corpus nobody trained on, that it was available throughout, and that reporting the number
+obtained without it describes the corpus rather than the task.
 
 \backmatter
 
