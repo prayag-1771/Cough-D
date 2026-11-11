@@ -10,10 +10,10 @@ Reproducing the selection used by the work being extended
     reachable: a threshold of -0.1271 yields exactly 7261
 
 Is the expert annotated subset a random sample
-  annotated: 820 recordings, 2.4 per cent of the corpus
-  detector score, annotated   quartiles 0.8711 0.9662 0.9885, mean 0.8815
-  detector score, unannotated quartiles 0.1913 0.8417 0.9766, mean 0.6353
-  lowest score among the annotated recordings: 0.0316
-  unannotated recordings scoring below that: 3267, 9.7 per cent of the unannotated
-  at or above 0.8: 81.5 per cent of annotated, 53.2 per cent of unannotated
-  at or above 0.9: 70.1 per cent of annotated, 44.2 per cent of unannotated
+  annotated: 2890 recordings, 8.4 per cent of the corpus
+  detector score, annotated   quartiles 0.8876 0.9652 0.9888, mean 0.8954
+  detector score, unannotated quartiles 0.1617 0.8125 0.9746, mean 0.6179
+  lowest score among the annotated recordings: 0.0000
+  unannotated recordings scoring below that: 0, 0.0 per cent of the unannotated
+  at or above 0.8: 85.8 per cent of annotated, 50.9 per cent of unannotated
+  at or above 0.9: 72.5 per cent of annotated, 42.3 per cent of unannotated

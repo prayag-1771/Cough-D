@@ -33,9 +33,16 @@ OUT = os.path.join(ROOT, 'results', 'coughvid_audit.txt')
 WANT_COUGH = 15619
 WANT_NON = 7261
 
-# A recording counts as expert annotated when the first annotator recorded a
-# judgement of audio quality, which is the field every annotation carries.
-EXPERT_FIELD = 'quality_1'
+# A recording counts as expert annotated when any of the annotators recorded a
+# judgement of audio quality. Reading quality_1 alone, on the assumption that
+# every annotation carries it, counts only the recordings the first annotator
+# saw: 820 of them rather than the 2,890 that carry a judgement from one of
+# the four, and the corpus paper reports more than 2,800 as expert labelled.
+EXPERT_FIELDS = ('quality_1', 'quality_2', 'quality_3', 'quality_4')
+
+
+def annotated(row):
+    return any((row.get(f) or '').strip() for f in EXPERT_FIELDS)
 
 
 def scores(rows):
@@ -101,8 +108,8 @@ def main():
     out += reachable(low, WANT_NON, 'non-cough recordings, as a lower tail')
     out.append('')
 
-    ann = [r for r in rows if (r.get(EXPERT_FIELD) or '').strip()]
-    rest = [r for r in rows if not (r.get(EXPERT_FIELD) or '').strip()]
+    ann = [r for r in rows if annotated(r)]
+    rest = [r for r in rows if not annotated(r)]
     a_s, r_s = scores(ann), scores(rest)
     out.append('Is the expert annotated subset a random sample')
     out.append('  annotated: %d recordings, %.1f per cent of the corpus'

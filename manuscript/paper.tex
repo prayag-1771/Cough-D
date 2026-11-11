@@ -296,7 +296,9 @@ possible, comparing across regimes.
 The practices this strand calls for have begun to appear in the literature it
 examines. External validation of cough based screening algorithms on data
 collected independently of the development corpus has been reported for
-tuberculosis~\cite{zimmer2026}; an evaluation protocol corrected for leakage
+tuberculosis~\cite{zimmer2026}, where eleven models that reached areas under the
+curve between $0.689$ and $0.743$ on the challenge data fell to between $0.480$ and
+$0.615$ on an independent cohort; an evaluation protocol corrected for leakage
 has been proposed for respiratory sound classification~\cite{park2026}; a
 patient disjoint partition has been applied across two public
 databases~\cite{niu2026}; a feature comparison has been published with
@@ -1194,10 +1196,11 @@ and states them rather than tuning towards a near miss.
 The second concerns the expert annotations. The corpus carries judgements from clinical
 annotators on a subset of its recordings, and it is tempting to use agreement on that
 subset to estimate the label error rate of the corpus as a whole. That inference requires
-the annotated subset to be a random sample, and it is not. Of $34{,}434$ recordings, $820$
-carry an annotation, which is $2.4$ per cent of the corpus. Their detector scores average
-$0.8815$ against $0.6353$ for the remainder, and $81.5$ per cent of them score at or above
-$0.8$ against $53.2$ per cent of the unannotated recordings. The recordings sent for
+the annotated subset to be a random sample, and it is not. Of $34{,}434$ recordings,
+$2{,}890$ carry a judgement from at least one of the four annotators, which is $8.4$ per
+cent of the corpus. Their detector scores average $0.8954$ against $0.6179$ for the
+remainder, and $85.8$ per cent of them score at or above $0.8$ against $50.9$ per cent of
+the unannotated recordings. The recordings sent for
 annotation were drawn overwhelmingly from the region where the detector was already
 confident. Agreement measured there cannot be extrapolated to the recordings nearest the
 threshold, which are precisely the ones whose labels are least secure, so the label error
@@ -1512,19 +1515,19 @@ Feng, Z., Markov, K., Saito, J., Matsui, T.: Neural Cough Counter: A Novel Deep 
 Sanchez-Morillo, D., Sales-Lerida, D., Priego-Torres, B., Le{\'o}n-Jim{\'e}nez, A.: Cough Detection Using Acceleration Signals and Deep Learning Techniques. Electronics 13(12), 2410 (2024)
 
 \bibitem{ayappan2025}
-Ayappan, G., Anila, S.: Automatic Detection and Prediction of COVID-19 in Cough Audio Signals Using Coronavirus Herd Immunity Optimizer Algorithm. Scientific Reports 15(1) (2025)
+Ayappan, G., Anila, S.: Automatic Detection and Prediction of COVID-19 in Cough Audio Signals Using Coronavirus Herd Immunity Optimizer Algorithm. Scientific Reports 15, 2271 (2025)
 
 \bibitem{zhang2026}
 Zhang, W., Teijeiro, T., Thevenot, J., Atienza, D.: Why ML-Based Cough Models Do Not Generalize: A Systematic Cross-Dataset Evaluation for Tuberculosis Screening. arXiv:2608.25846 (2026)
 
 \bibitem{zimmer2026}
-Zimmer, A.J., Espinoza-Lopez, P., Ravi, V., Sieberts, S.K., Abbasgholizadeh Rahimi, S., Pai, M., Ugarte-Gil, C., Grandjean Lapierre, S.: External Validation of Cough-Based Algorithms for Pulmonary Tuberculosis Screening from the CODA TB DREAM Challenge Using Cough Data from Peru. Scientific Reports 16(1) (2026)
+Zimmer, A.J., Espinoza-Lopez, P., Ravi, V., Sieberts, S.K., Abbasgholizadeh Rahimi, S., Pai, M., Ugarte-Gil, C., Grandjean Lapierre, S.: External Validation of Cough-Based Algorithms for Pulmonary Tuberculosis Screening from the CODA TB DREAM Challenge Using Cough Data from Peru. Scientific Reports 16, 24999 (2026)
 
 \bibitem{park2026}
 Park, C.H., Lee, J.C.: Domain-Adaptive Pretraining and a Leakage-Corrected Evaluation Protocol for Respiratory Sound Classification. IEEE Access 14, 151079–151100 (2026)
 
 \bibitem{niu2026}
-Niu, J., Li, P.: Reliability-Aware Transfer Learning with BEATs for Variable-Length Respiratory Sound Classification: A Patient Disjoint Evaluation in Two Public Databases. Medical Engineering and Physics 147(9), 095025 (2026)
+Niu, J., Li, P.: Reliability-Aware Transfer Learning with BEATs for Variable-Length Respiratory Sound Classification: A Patient-Disjoint Evaluation in Two Public Databases. Medical Engineering and Physics 147(9), 095025 (2026)
 
 \bibitem{smailov2026}
 Smailov, N., Zhekambayeva, M., Bauyrzhankyzy, D., Yussupova, G., Mambetaliyeva, A., Nazarova, A., Mussilimov, K., Sabibolda, A.: A Reproducible Evaluation of Hybrid Spectral-Temporal Features for Four-Class Respiratory Sound Event Classification. Signals 7(5), 88 (2026)
@@ -1533,7 +1536,7 @@ Smailov, N., Zhekambayeva, M., Bauyrzhankyzy, D., Yussupova, G., Mambetaliyeva, 
 Aquino-Garc{\'\i}a, A.M., P{\'e}rez-Espinosa, H., Andreu-Perez, J., Rodr{\'\i}guez Gonz{\'a}lez, A.Y.: Audio-Based Screening of Respiratory Diseases Using Machine Learning: A Methodological Framework Evaluated on a Clinically Validated COVID-19 Cough Dataset. Machine Learning and Knowledge Extraction 8(3), 80 (2026)
 
 \bibitem{wu2026}
-Wu, M., Ren, S., Huang, M.: Low-Rank Adversarial Adaptation for Cross-Device Respiratory Sound Classification. IEICE Transactions on Information and Systems (2026)
+Wu, M., Ren, S., Huang, M.: Low-Rank Adversarial Adaptation for Cross-Device Respiratory Sound Classification. IEICE Transactions on Information and Systems, 2026EDL8040 (2026)
 
 \bibitem{vocalsound2022}
 Gong, Y., Yu, J., Glass, J.: VocalSound: A Dataset for Improving Human Vocal Sounds Recognition. In: Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) (2022)

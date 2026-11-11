@@ -41,7 +41,7 @@ KNOWN = {
     # figures quoted from cited work, checked against the source by hand
     '98.5', '94.2', '0.98', '15', '20', '98.18', '95.18', '2212', '62',
     '67842', '0.846', '0.619', '0.71', '0.90', '0.6', '53000', '36000',
-    '34000', '2024', '1993',
+    '34000', '2024', '1993', '0.689', '0.743', '0.480', '0.615',
     # constants of the method and of the hardware, not measurements
     '2595', '4096', '700', '512', '257', '148',
     # differences between two values in per_seed.csv, so present in the

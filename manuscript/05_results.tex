@@ -260,10 +260,11 @@ and states them rather than tuning towards a near miss.
 The second concerns the expert annotations. The corpus carries judgements from clinical
 annotators on a subset of its recordings, and it is tempting to use agreement on that
 subset to estimate the label error rate of the corpus as a whole. That inference requires
-the annotated subset to be a random sample, and it is not. Of $34{,}434$ recordings, $820$
-carry an annotation, which is $2.4$ per cent of the corpus. Their detector scores average
-$0.8815$ against $0.6353$ for the remainder, and $81.5$ per cent of them score at or above
-$0.8$ against $53.2$ per cent of the unannotated recordings. The recordings sent for
+the annotated subset to be a random sample, and it is not. Of $34{,}434$ recordings,
+$2{,}890$ carry a judgement from at least one of the four annotators, which is $8.4$ per
+cent of the corpus. Their detector scores average $0.8954$ against $0.6179$ for the
+remainder, and $85.8$ per cent of them score at or above $0.8$ against $50.9$ per cent of
+the unannotated recordings. The recordings sent for
 annotation were drawn overwhelmingly from the region where the detector was already
 confident. Agreement measured there cannot be extrapolated to the recordings nearest the
 threshold, which are precisely the ones whose labels are least secure, so the label error
